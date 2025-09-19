@@ -1,31 +1,38 @@
-import { AxiosInstance } from "axios";
-import { api } from "../../lib/api.ts";
+import API from "../../networks/api.ts";
 import { CreateEventDTO } from "./dtos";
+import { 
+  EventDto, 
+  CreateEventDto, 
+  PresentDto,
+  UploadAttendanceDto
+} from "../../types/dto";
 
 export class EventApiService {
-  api: AxiosInstance = api;
-
-  async getEvents() {
-    const data = await this.api.get("/events");
-    return data.data;
+  async getEvents(): Promise<EventDto[]> {
+    const response = await API.EVENTS.GET_ALL();
+    return response.data || [];
   }
 
-  async getEventAttendees(eventId: string) {
-    const data = await this.api.get(`/events/attendance?event_id=${eventId}`);
-    return data.data;
+  async getEventAttendees(eventId: string): Promise<PresentDto[]> {
+    const response = await API.PRESENTS.GET_ALL({ event_id: parseInt(eventId) });
+    return response.data || [];
   }
 
-  async insertEvent(dto: CreateEventDTO) {
-    const data = await this.api.post("/events", dto);
-    return data.data;
+  async insertEvent(dto: CreateEventDTO): Promise<EventDto | undefined> {
+    const createData: CreateEventDto = {
+      name: dto.name,
+      created_by: dto.created_by || 0,
+      modified_by: dto.modified_by || 0,
+      profit_center: dto.profit_center || 0,
+      event_date_from: dto.event_date_from ? dto.event_date_from.toISOString() : "",
+      event_date_to: dto.event_date_to ? dto.event_date_to.toISOString() : "",
+    };
+    
+    const response = await API.EVENTS.CREATE(createData);
+    return response.data;
   }
 
-  async insertAttendance(eventId: string, file: File) {
-    const formData = new FormData();
-    formData.append("event_id", eventId);
-    formData.append("file", file);
-
-    const data = await this.api.post("/events/attendance", formData);
-    return data.data;
+  async insertAttendance(eventId: string, file: File): Promise<UploadAttendanceDto> {
+    return await API.EVENTS.UPLOAD_ATTENDANCE(parseInt(eventId), file);
   }
 }

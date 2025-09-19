@@ -7,7 +7,8 @@ export const useFindAttendance = (eventId: string) => {
    const queryKeyFactory = new QueryKeyFactory("attendance");
    
    return useQuery({
-      queryKey: queryKeyFactory.all(),
-      queryFn: () => api.getEventAttendees(eventId)
+      queryKey: [...queryKeyFactory.all(), eventId],
+      queryFn: () => api.getEventAttendees(eventId),
+      enabled: !!eventId && eventId.trim() !== ""
    })
 }

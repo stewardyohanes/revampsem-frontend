@@ -1,14 +1,17 @@
-import {AuthApiService} from "../api.ts";
-import {QueryKeyFactory} from "../../shared/query-key.factory.ts";
+import {AuthApiService} from "../api";
 import {useQuery} from "@tanstack/react-query";
+import {AuthCheckResponseDto} from "../../../types/dto";
+import {getAuthToken} from "../../../lib/token-manager";
 
-export const useIsAuth = ()=> {
+export const useIsAuth = () => {
    const api = new AuthApiService();
-   const queryKeyFactory = new QueryKeyFactory("isAuth");
+   const token = getAuthToken();
    
-   return useQuery({
-      queryKey: queryKeyFactory.all(),
+   return useQuery<AuthCheckResponseDto>({
+      queryKey: ["isAuth"],
       queryFn: () => api.isAuth(),
-      retry: 1
-   })
-}
+      retry: 1,
+      enabled: !!token, // Only run query if token exists
+      staleTime: 5 * 60 * 1000, // 5 minutes
+   });
+};

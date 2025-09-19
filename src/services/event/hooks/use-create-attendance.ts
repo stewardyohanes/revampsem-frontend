@@ -22,8 +22,7 @@ export const useCreateAttendance = () => {
       }
       return event;
     },
-    onSuccess: async (data) => {
-      console.log(data);
+    onSuccess: async () => {
       toast({
         title: "Event created",
         description: "Event has been created successfully",
@@ -32,7 +31,6 @@ export const useCreateAttendance = () => {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        console.error(error);
         toast({
           title: "Event creation failed",
           description: error.response?.data.message,

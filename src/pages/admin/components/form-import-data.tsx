@@ -35,7 +35,7 @@ import { cn } from "../../../lib/utils.ts";
 import { Calendar } from "../../../components/ui/calendar.tsx";
 import { format } from "date-fns";
 import { useFindEvent } from "../../../services/event/hooks/use-find-event.ts";
-import { EventEntity } from "../../../services/event/entities/EventEntity.ts";
+import { EventDto } from "../../../types/dto";
 import { useCreateAttendance } from "../../../services/event/hooks/use-create-attendance.ts";
 
 export default function FormImportData() {
@@ -69,8 +69,6 @@ export default function FormImportData() {
     try {
       await createEvent.mutateAsync(data);
       form.reset();
-    } catch (e) {
-      console.error(e);
     } finally {
       setIsLoading(false);
     }
@@ -85,8 +83,6 @@ export default function FormImportData() {
         event_id: data.event_id,
         file: data.file,
       });
-    } catch (err) {
-      console.log(err);
     } finally {
       setIsLoading(false);
     }
@@ -115,9 +111,9 @@ export default function FormImportData() {
                 <SelectContent>
                   <SelectItem value="1">Select Event</SelectItem>
                   <SelectItem value="0">Create New Event</SelectItem>
-                  {events.data.map((event: EventEntity) => (
+                  {events?.map((event: EventDto) => (
                     <SelectItem key={event.id} value={event.id.toString()}>
-                      {event.name}
+                      {event.event}
                     </SelectItem>
                   ))}
                 </SelectContent>

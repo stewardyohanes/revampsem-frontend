@@ -1,45 +1,56 @@
-import {AxiosInstance} from "axios";
-import {api} from "../../lib/api.ts";
-import {UserEntity} from "./entities/UserEntity.ts";
-import {CreateUserDTO, UpdateUserDTO} from "./dtos";
-import {ProfitCenterEntity} from "./entities/ProfitCenterEntity.ts";
+import API from "../../networks/api.ts";
+import { CreateUserDTO, UpdateUserDTO } from "./dtos";
+import { 
+  UserDto, 
+  CreateUserDto, 
+  UpdateUserDto, 
+  ProfitCenterDto
+} from "../../types/dto";
 
 export class UserApiService {
-   api: AxiosInstance = api;
-   
-   async getUsers(): Promise<UserEntity[] | undefined> {
-      const data = await this.api.get<UserEntity[] | undefined>('/users');
-      
-      return data.data;
-   }
-   
-   async getUser(id: number): Promise<UserEntity | undefined> {
-      const data = await this.api.get<UserEntity | undefined>(`/users/${id}`);
-      
-      return data.data;
-   }
-   
-   async createUser(dto: CreateUserDTO): Promise<UserEntity | undefined> {
-      const data = await this.api.post<UserEntity | undefined>('/users', dto);
-      
-      return data.data;
-   }
-   
-   async updateUser(id: number, dto: UpdateUserDTO): Promise<UserEntity | undefined> {
-      const data = await this.api.patch<UserEntity | undefined>(`/users/${id}`, dto);
-      
-      return data.data;
-   }
-   
-   async deleteUser(id: number): Promise<void> {
-      await this.api.delete(`/users/${id}`);
-      
-      return;
-   }
-   
-   async getProfitCenters(): Promise<ProfitCenterEntity[]> {
-      const data = await this.api.get<ProfitCenterEntity[]>('/users/profit-center');
-      
-      return data.data;
-   }
+  async getUsers(): Promise<UserDto[]> {
+    const response = await API.USERS.GET_ALL();
+    return response.data || [];
+  }
+
+  async getUser(id: number): Promise<UserDto | undefined> {
+    const response = await API.USERS.GET_BY_ID(id);
+    return response.data;
+  }
+
+  async createUser(dto: CreateUserDTO): Promise<UserDto | undefined> {
+    const createData: CreateUserDto = {
+      username: dto.username,
+      display_name: dto.display_name,
+      password: dto.password,
+      password_confirmation: dto.password_confirmation,
+      profit_center_id: dto.profit_center_id,
+    };
+    
+    const response = await API.USERS.CREATE(createData);
+    return response.data;
+  }
+
+  async updateUser(
+    id: number,
+    dto: UpdateUserDTO
+  ): Promise<UserDto | undefined> {
+    const updateData: UpdateUserDto = {
+      username: dto.username,
+      display_name: dto.display_name,
+      password: dto.password,
+    };
+    
+    const response = await API.USERS.UPDATE(id, updateData);
+    return response.data;
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    await API.USERS.DELETE(id);
+  }
+
+  async getProfitCenters(): Promise<ProfitCenterDto[]> {
+    const response = await API.USERS.GET_PROFIT_CENTERS();
+    return response.data || [];
+  }
 }

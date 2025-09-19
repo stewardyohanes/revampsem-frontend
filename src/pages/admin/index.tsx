@@ -15,24 +15,16 @@ import {
 } from "../../components/ui/select.tsx";
 import { DataTable } from "../../components/data-table.tsx";
 import { ColumnDef } from "@tanstack/react-table";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { SearchableEventSelect } from "../../components/searchable-event-select.tsx";
 import { CaretSortIcon } from "@radix-ui/react-icons";
 import ExcelExportXLSX from "./components/export-excel-xlsx.tsx";
 import { ModalForm } from "../../components/modal-form.tsx";
 import { useFindAttendance } from "../../services/event/hooks/use-find-attendance.ts";
 import FormImportData from "./components/form-import-data.tsx";
+import { PresentDto } from "../../types/dto";
 
-type Participant = {
-  id: string;
-  invoice: string;
-  name: string;
-  email: string;
-  phone: string;
-  status: string;
-};
-
-const columns: ColumnDef<Participant>[] = [
+const columns: ColumnDef<PresentDto>[] = [
   {
     accessorKey: "id",
     header: ({ column }) => {
@@ -48,56 +40,56 @@ const columns: ColumnDef<Participant>[] = [
     },
   },
   {
-    accessorKey: "invoice",
+    accessorKey: "User.username",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Invoice
+          Username
           <CaretSortIcon />
         </Button>
       );
     },
   },
   {
-    accessorKey: "name",
+    accessorKey: "User.display_name",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Nama
+          Name
           <CaretSortIcon />
         </Button>
       );
     },
   },
   {
-    accessorKey: "email",
+    accessorKey: "Event.event",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Email
+          Event
           <CaretSortIcon />
         </Button>
       );
     },
   },
   {
-    accessorKey: "phone",
+    accessorKey: "created_at",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          No Telepon
+          Attendance Date
           <CaretSortIcon />
         </Button>
       );
@@ -177,44 +169,12 @@ const columns: ColumnDef<Participant>[] = [
   },
 ];
 
-const data: Participant[] = [
-  {
-    id: "1",
-    invoice: "INV001",
-    name: "John Doe",
-    email: "john@example.com",
-    phone: "+1234567890",
-    status: "pending",
-  },
-  {
-    id: "2",
-    invoice: "INV002",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    phone: "+0987654321",
-    status: "confirmed",
-  },
-  {
-    id: "3",
-    invoice: "INV003",
-    name: "Bob Johnson",
-    email: "bob@example.com",
-    phone: "+1122334455",
-    status: "cancelled",
-  },
-];
-
 export default function AdminPage() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [openImportModal, setOpenImportModal] = useState(false);
   const [eventID, setEventID] = useState("");
-  const { data: attendees, refetch } = useFindAttendance(eventID);
-  const attendeesData = attendees?.data || [];
-  console.log(eventID);
-
-  useEffect(() => {
-    refetch();
-  }, [eventID, refetch]);
+  const { data: attendees } = useFindAttendance(eventID);
+  const attendeesData = attendees || [];
 
   return (
     <Card>
@@ -225,7 +185,12 @@ export default function AdminPage() {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3">
           <ExcelExportXLSX
-            data={data}
+            data={attendeesData.map(item => ({
+              username: item.User.username,
+              display_name: item.User.display_name,
+              event: item.Event.event,
+              created_at: item.created_at
+            }))}
             filename={`Template Seminar ${new Date().getFullYear()}.xlsx`}
             text={"Download Template"}
           />
@@ -262,10 +227,14 @@ export default function AdminPage() {
           <div className="flex flex-1 gap-4 flex-wrap">
             <SearchableEventSelect
               onSelect={(event) => {
+                if (!event) {
+                  setEventID("");
+                  return;
+                }
                 setEventID(
-                  event?.id.toString() === eventID
+                  event?.id?.toString() === eventID
                     ? ""
-                    : event?.id.toString() || ""
+                    : event?.id?.toString() || ""
                 );
               }}
             />

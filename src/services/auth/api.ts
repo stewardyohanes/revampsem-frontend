@@ -1,20 +1,18 @@
-import {AxiosInstance} from "axios";
-import {api} from "../../lib/api.ts";
-import {UserEntity} from "../users/entities/UserEntity.ts";
-import {LoginDTO} from "./dtos";
+import API from "../../networks/api";
+import { LoginDTO } from "./dtos";
+import { LoginDto, LoginResponseDto, AuthCheckResponseDto } from "../../types/dto";
 
-export class AuthApiService{
-   api: AxiosInstance = api;
-   
-   async login(dto: LoginDTO): Promise<UserEntity> {
-      const data = await this.api.post<UserEntity>('/auth/login', dto);
-      
-      return data.data;
-   }
-   
-   async isAuth(): Promise<UserEntity> {
-      const data = await this.api.get<UserEntity>('/auth/is-auth');
-      
-      return data.data;
-   }
+export class AuthApiService {
+  async login(dto: LoginDTO): Promise<LoginResponseDto> {
+    const loginData: LoginDto = {
+      username: dto.username,
+      password: dto.password,
+    };
+    
+    return await API.AUTH.LOGIN(loginData);
+  }
+
+  async isAuth(): Promise<AuthCheckResponseDto> {
+    return await API.AUTH.CHECK();
+  }
 }

@@ -1,37 +1,82 @@
-import {AuthApiService} from "../api.ts";
-import {useMutation, UseMutationResult, useQueryClient} from "@tanstack/react-query";
-import {UserEntity} from "../../users/entities/UserEntity.ts";
-import {LoginDTO} from "../dtos";
-import {useToast} from "../../../hooks/use-toast.ts";
-import {AxiosError} from "axios";
+import { AuthApiService } from "../api";
+import {
+  useMutation,
+  UseMutationResult,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { UserEntity } from "../../users/entities/UserEntity";
+import { LoginDTO } from "../dtos";
+import { useToast } from "../../../hooks/use-toast";
+import { AxiosError } from "axios";
+import { LoginResponseDto } from "../../../types/dto";
+import { setUserData } from "../../../lib/token-manager";
 
-export const useAuthLogin = (): UseMutationResult<UserEntity, Error, LoginDTO> => {
-   const api = new AuthApiService();
-   const queryClient = useQueryClient();
-   const {toast}= useToast();
-   
-   return useMutation<UserEntity, Error, LoginDTO>({
-      mutationFn: (dto: LoginDTO) => api.login(dto),
-      onSuccess: () => {
-         toast({
-            title: "Login success",
-            description: "You have successfully logged in",
-         });
-         queryClient.invalidateQueries({queryKey: ["isAuth"]});
-      },
-      onError: (error) => {
-         if (error instanceof AxiosError){
-            console.error(error)
-            toast({
-            title: "Login failed",
-            description: error.response?.data.message,
-         });
-         } else {
-            toast({
-            title: "Login failed",
-            description: error.message,
-         });
-         }
+export const useAuthLogin = (): UseMutationResult<
+  UserEntity,
+  Error,
+  LoginDTO
+> => {
+  const api = new AuthApiService();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation<UserEntity, Error, LoginDTO>({
+    mutationFn: async (dto: LoginDTO) => {
+      const response: LoginResponseDto = await api.login(dto);
+      const { token, user: userData } = response;
+
+      if (!token) {
+        throw new Error("No authentication token received from server");
       }
-   });
+
+      if (!userData) {
+        throw new Error("No user data received from server");
+      }
+
+      return {
+        id: userData.id,
+        username: userData.username,
+        display_name: userData.display_name,
+        password: "",
+        profit_center_id: userData.profit_center_id || 0,
+        level: 0,
+        reset_password: userData.reset_password,
+        token,
+        created_at: userData.created_at,
+        updated_at: userData.updated_at,
+      };
+    },
+    onSuccess: async (userEntity) => {
+      // Token sudah disimpan di API layer, jadi tidak perlu duplikasi
+      // Simpan user data ke localStorage
+      setUserData({
+        id: userEntity.id,
+        username: userEntity.username,
+        display_name: userEntity.display_name,
+        profit_center_id: userEntity.profit_center_id,
+        reset_password: userEntity.reset_password,
+        created_at: userEntity.created_at,
+        updated_at: userEntity.updated_at,
+      });
+
+      toast({
+        title: "Login berhasil",
+        description: "Anda berhasil masuk ke sistem",
+      });
+      
+      // Wait for query invalidation to complete before allowing redirect
+      await queryClient.invalidateQueries({ queryKey: ["isAuth"] });
+    },
+    onError: (error) => {
+      const message = error instanceof AxiosError 
+        ? error.response?.data.message 
+        : error.message;
+
+      toast({
+        title: "Login gagal",
+        description: message || "Terjadi kesalahan saat login",
+        variant: "destructive",
+      });
+    },
+  });
 };

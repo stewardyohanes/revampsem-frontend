@@ -19,7 +19,6 @@ export const useDeleteUser = () => {
       },
       onError: (error) => {
          if (error instanceof AxiosError) {
-            console.error(error)
             toast({
                title: "User deletion failed",
                description: error.response?.data.message,

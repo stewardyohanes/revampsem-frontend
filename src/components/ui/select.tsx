@@ -27,7 +27,9 @@ const SelectTrigger = React.forwardRef<
       <ChevronDown className="h-4 w-4 opacity-50" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
-))
+)) as React.ForwardRefExoticComponent<
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & React.RefAttributes<React.ElementRef<typeof SelectPrimitive.Trigger>>
+>
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
 
 const SelectScrollUpButton = React.forwardRef<
@@ -94,7 +96,9 @@ const SelectContent = React.forwardRef<
       <SelectScrollDownButton />
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
-))
+)) as React.ForwardRefExoticComponent<
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & React.RefAttributes<React.ElementRef<typeof SelectPrimitive.Content>>
+>
 SelectContent.displayName = SelectPrimitive.Content.displayName
 
 const SelectLabel = React.forwardRef<
@@ -128,7 +132,9 @@ const SelectItem = React.forwardRef<
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
   </SelectPrimitive.Item>
-))
+)) as React.ForwardRefExoticComponent<
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item> & React.RefAttributes<React.ElementRef<typeof SelectPrimitive.Item>>
+>
 SelectItem.displayName = SelectPrimitive.Item.displayName
 
 const SelectSeparator = React.forwardRef<

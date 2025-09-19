@@ -5,14 +5,13 @@ import {Check, ChevronsUpDown} from "lucide-react";
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from "./ui/command.tsx";
 import {cn} from "../lib/utils.ts";
 import {useFindEvent} from "../services/event/hooks/use-find-event.ts";
-import {EventEntity} from "../services/event/entities/EventEntity.ts";
+import {EventDto} from "../types/dto";
 
-
-export function SearchableEventSelect({onSelect}: { onSelect: (event: EventEntity | null ) => void}) {
+export function SearchableEventSelect({onSelect}: { onSelect: (event: EventDto | null ) => void}) {
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState("")
   const { data } = useFindEvent()
-  const events = data?.data || []
+  const events = data || []
  
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -24,8 +23,8 @@ export function SearchableEventSelect({onSelect}: { onSelect: (event: EventEntit
           className="w-[80%] justify-between"
         >
           {value
-            ? events.find((event: EventEntity) => event.name === value)?.name
-            : "Select Events..."}
+            ? events.find((event: EventDto) => event.event === value)?.event
+            : "Select event..."}
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -35,23 +34,28 @@ export function SearchableEventSelect({onSelect}: { onSelect: (event: EventEntit
           <CommandList>
             <CommandEmpty>No events found.</CommandEmpty>
             <CommandGroup>
-              {events.length > 0 && events.map((event: EventEntity) => (
+              {events.length > 0 && events.map((event: EventDto) => (
                 <CommandItem
                   key={event.id}
-                  value={event.name}
+                  value={event.event}
                   onSelect={(currentValue) => {
                     setValue(currentValue === value ? "" : currentValue)
                     setOpen(false)
-                    onSelect(event)
+                    if (currentValue === value) {
+                      onSelect(null)
+                    } else {
+                      const selectedEvent = events.find((e: EventDto) => e.event === currentValue)
+                      onSelect(selectedEvent || null)
+                    }
                   }}
                 >
-                  {event.name}
                   <Check
                     className={cn(
-                      "ml-auto",
-                      value === event.name ? "opacity-100" : "opacity-0"
+                      "mr-2 h-4 w-4",
+                      value === event.event ? "opacity-100" : "opacity-0"
                     )}
                   />
+                  {event.event}
                 </CommandItem>
               ))}
             </CommandGroup>

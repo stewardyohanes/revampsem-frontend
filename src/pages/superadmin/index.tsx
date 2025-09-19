@@ -6,7 +6,7 @@ import {Badge} from "../../components/ui/badge"
 import {Card, CardContent} from "../../components/ui/card.tsx";
 import {DataTable} from "../../components/data-table.tsx";
 import {useFindUsers} from "../../services/users/hooks/use-find-users.ts";
-import {UserEntity} from "../../services/users/entities/UserEntity.ts";
+import {UserDto} from "../../types/dto";
 import {ModalForm} from "../../components/modal-form.tsx";
 import {FormCreateUser} from "./components/form-create-user.tsx";
 import {useState} from "react";
@@ -31,12 +31,12 @@ import {
 export default function SuperAdminPage() {
   const [openCreate, setOpenCreate] = useState(false)
   const [openUpdate, setOpenUpdate] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<UserEntity | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserDto | null>(null);
   
   const { data } = useFindUsers()
   const deleteUser = useDeleteUser()
   
-  const columns: ColumnDef<UserEntity>[] = [
+  const columns: ColumnDef<UserDto>[] = [
   {
     accessorKey: "id",
     header: ({ column }) => {
@@ -179,7 +179,7 @@ export default function SuperAdminPage() {
               </div>
             </div>
             
-            <DataTable columns={columns} data={data} />
+            <DataTable columns={columns} data={data || []} />
           </div>
         </div>
       </CardContent>

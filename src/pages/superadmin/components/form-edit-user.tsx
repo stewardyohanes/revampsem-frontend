@@ -8,9 +8,9 @@ import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {updateUserSchema} from "../../../services/users/validators";
 import {useUpdateUser} from "../../../services/users/hooks/use-update-user.ts";
-import {UserEntity} from "../../../services/users/entities/UserEntity.ts";
+import {UserDto} from "../../../types/dto";
 
-export function FormEditUser({setOpen, userId, user}: {setOpen: (open: boolean) => void, userId:number, user: UserEntity}) {
+export function FormEditUser({setOpen, userId, user}: {setOpen: (open: boolean) => void, userId:number, user: UserDto}) {
    const [isLoading, setIsLoading] = useState(false)
    const form = useForm<z.infer<typeof updateUserSchema>>({
      resolver: zodResolver(updateUserSchema),
