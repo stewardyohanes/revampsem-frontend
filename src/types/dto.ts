@@ -70,6 +70,7 @@ export interface EventDto {
   updated_at: string;
   profit_center_id?: number;
   ProfitCenter?: ProfitCenterDto;
+  Present?: PresentDto[];
 }
 
 export interface CreateEventDto {
@@ -92,28 +93,47 @@ export interface UploadAttendanceDto {
 // ===== Present DTOs =====
 export interface PresentDto {
   id: number;
-  user_id: number;
+  invoice?: string;
+  name: string;
+  email?: string;
+  no_telp?: string;
+  status: number;
+  createdAt: string;
+  updatedAt: string;
+  profit_center_id: number;
   event_id: number;
-  created_at: string;
-  updated_at: string;
-  User: UserDto;
-  Event: EventDto;
+  ProfitCenter?: ProfitCenterDto;
+  Event?: EventDto;
 }
 
 export interface CreatePresentDto {
-  user_id: number;
+  invoice?: string;
+  name: string;
+  email?: string;
+  no_telp?: string;
+  status?: number;
+  profit_center_id: number;
   event_id: number;
 }
 
 export interface UpdatePresentDto {
-  user_id?: number;
+  invoice?: string;
+  name?: string;
+  email?: string;
+  no_telp?: string;
+  status?: number;
+  profit_center_id?: number;
   event_id?: number;
 }
 
 export interface PresentQueryParamsDto {
   event_id?: number;
-  user_id?: number;
   profit_center_id?: number;
+  invoice?: string;
+  name?: string;
+  email?: string;
+  no_telp?: string;
+  status?: number;
   page?: number;
   limit?: number;
 }

@@ -72,6 +72,7 @@ export interface Event {
   updated_at: string;
   profit_center_id?: number;
   ProfitCenter?: ProfitCenter;
+  Present: Present[];
 }
 
 export interface CreateEvent {
@@ -85,28 +86,47 @@ export interface CreateEvent {
 
 export interface Present {
   id: number;
-  user_id: number;
+  invoice?: string;
+  name: string;
+  email?: string;
+  no_telp?: string;
+  status: number;
+  createdAt: string;
+  updatedAt: string;
+  profit_center_id: number;
   event_id: number;
-  created_at: string;
-  updated_at: string;
-  User: User;
-  Event: Event;
+  ProfitCenter?: ProfitCenter;
+  Event?: Event;
 }
 
 export interface CreatePresent {
-  user_id: number;
+  invoice?: string;
+  name: string;
+  email?: string;
+  no_telp?: string;
+  status?: number;
+  profit_center_id: number;
   event_id: number;
 }
 
 export interface UpdatePresent {
-  user_id?: number;
+  invoice?: string;
+  name?: string;
+  email?: string;
+  no_telp?: string;
+  status?: number;
+  profit_center_id?: number;
   event_id?: number;
 }
 
 export interface PresentQueryParams {
   event_id?: number;
-  user_id?: number;
   profit_center_id?: number;
+  invoice?: string;
+  name?: string;
+  email?: string;
+  no_telp?: string;
+  status?: number;
   page?: number;
   limit?: number;
 }

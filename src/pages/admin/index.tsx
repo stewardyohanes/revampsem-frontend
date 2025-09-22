@@ -20,13 +20,15 @@ import { SearchableEventSelect } from "../../components/searchable-event-select.
 import { CaretSortIcon } from "@radix-ui/react-icons";
 import ExcelExportXLSX from "./components/export-excel-xlsx.tsx";
 import { ModalForm } from "../../components/modal-form.tsx";
-import { useFindAttendance } from "../../services/event/hooks/use-find-attendance.ts";
+
 import FormImportData from "./components/form-import-data.tsx";
-import { PresentDto } from "../../types/dto";
+import API from "../../networks/api.ts";
+import { EventDto, PresentDto } from "../../types/dto";
+import { useEffect } from "react";
 
 const columns: ColumnDef<PresentDto>[] = [
   {
-    accessorKey: "id",
+    id: "no",
     header: ({ column }) => {
       return (
         <Button
@@ -38,65 +40,86 @@ const columns: ColumnDef<PresentDto>[] = [
         </Button>
       );
     },
+    cell: ({ row }) => {
+      return <div className="text-center">{row.index + 1}</div>;
+    },
   },
   {
-    accessorKey: "User.username",
+    accessorKey: "invoice",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Username
+          Invoice
           <CaretSortIcon />
         </Button>
       );
     },
+    cell: ({ row }) => {
+      return (
+        <div className="text-center">{row.getValue("invoice") || "-"}</div>
+      );
+    },
   },
   {
-    accessorKey: "User.display_name",
+    accessorKey: "name",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Name
+          Nama
           <CaretSortIcon />
         </Button>
       );
     },
+    cell: ({ row }) => {
+      return (
+        <div className="text-left font-medium">{row.getValue("name")}</div>
+      );
+    },
   },
   {
-    accessorKey: "Event.event",
+    accessorKey: "email",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Event
+          Email
           <CaretSortIcon />
         </Button>
       );
     },
+    cell: ({ row }) => {
+      return <div className="text-left">{row.getValue("email") || "-"}</div>;
+    },
   },
   {
-    accessorKey: "created_at",
+    accessorKey: "no_telp",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Attendance Date
+          No Telepon
           <CaretSortIcon />
         </Button>
       );
     },
+    cell: ({ row }) => {
+      return (
+        <div className="text-center">{row.getValue("no_telp") || "-"}</div>
+      );
+    },
   },
   {
-    accessorKey: "attendance",
+    accessorKey: "status",
     header: ({ column }) => {
       return (
         <Button
@@ -108,61 +131,32 @@ const columns: ColumnDef<PresentDto>[] = [
         </Button>
       );
     },
-    cell: () => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const [openApproveModal, setOpenApproveModal] = useState(false);
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const [openUpdateModal, setOpenUpdateModal] = useState(false);
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const [openDeleteModal, setOpenDeleteModal] = useState(false);
+    cell: ({ row }) => {
+      const present = row.original;
       return (
-        <div className={"flex gap-2 justify-center"}>
-          <ModalForm
-            open={openApproveModal}
-            setOpen={setOpenApproveModal}
-            title={"Import Data Seminar"}
-            triggerText={
-              <Button
-                size={"sm"}
-                className={"rounded-2xl bg-amber-500 hover:bg-amber-400"}
-              >
-                Approve
-              </Button>
-            }
+        <div className="flex gap-2 justify-center">
+          <Button
+            size="sm"
+            className="rounded-2xl bg-green-500 hover:bg-green-400 text-white"
+            onClick={() => console.log("Approve present:", present)}
           >
-            Test
-          </ModalForm>
-          <ModalForm
-            open={openUpdateModal}
-            setOpen={setOpenUpdateModal}
-            title={"Import Data Seminar"}
-            triggerText={
-              <Button
-                size={"sm"}
-                className={"rounded-2xl  bg-blue-500 hover:bg-blue-400"}
-              >
-                Update
-              </Button>
-            }
+            Approve
+          </Button>
+          <Button
+            size="sm"
+            className="rounded-2xl bg-blue-500 hover:bg-blue-400 text-white"
+            onClick={() => console.log("Update present:", present)}
           >
-            Test
-          </ModalForm>
-          <ModalForm
-            open={openDeleteModal}
-            setOpen={setOpenDeleteModal}
-            title={"Import Data Seminar"}
-            triggerText={
-              <Button
-                size={"sm"}
-                variant="destructive"
-                className={"rounded-2xl"}
-              >
-                Delete
-              </Button>
-            }
+            Update
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            className="rounded-2xl"
+            onClick={() => console.log("Delete present:", present)}
           >
-            Test
-          </ModalForm>
+            Delete
+          </Button>
         </div>
       );
     },
@@ -173,8 +167,45 @@ export default function AdminPage() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [openImportModal, setOpenImportModal] = useState(false);
   const [eventID, setEventID] = useState("");
-  const { data: attendees } = useFindAttendance(eventID);
-  const attendeesData = attendees || [];
+  const [eventsData, setEventsData] = useState<EventDto[]>([]);
+  const [attendeesData, setAttendeesData] = useState<PresentDto[]>([]);
+
+  // Fetch events data dengan Present
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await API.EVENTS.GET_ALL();
+        if (response.success && response.data) {
+          setEventsData(response.data);
+          console.log("Events loaded:", response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  // Update attendees data ketika eventID berubah
+  useEffect(() => {
+    if (eventID && eventsData.length > 0) {
+      const selectedEvent = eventsData.find(
+        (event) => event.id.toString() === eventID
+      );
+      if (selectedEvent && selectedEvent.Present) {
+        setAttendeesData(selectedEvent.Present);
+        console.log(
+          `Present data for event ${eventID}:`,
+          selectedEvent.Present
+        );
+      } else {
+        setAttendeesData([]);
+      }
+    } else {
+      setAttendeesData([]);
+    }
+  }, [eventID, eventsData]);
 
   return (
     <Card>
@@ -185,11 +216,14 @@ export default function AdminPage() {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3">
           <ExcelExportXLSX
-            data={attendeesData.map(item => ({
-              username: item.User.username,
-              display_name: item.User.display_name,
-              event: item.Event.event,
-              created_at: item.created_at
+            data={attendeesData.map((item) => ({
+              invoice: item.invoice || "",
+              name: item.name,
+              email: item.email || "",
+              no_telp: item.no_telp || "",
+              event: item.Event?.event || "",
+              status: item.status,
+              createdAt: item.createdAt,
             }))}
             filename={`Template Seminar ${new Date().getFullYear()}.xlsx`}
             text={"Download Template"}
