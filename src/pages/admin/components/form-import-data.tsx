@@ -44,10 +44,9 @@ export default function FormImportData() {
     resolver: zodResolver(createEventSchema),
     defaultValues: {
       name: "",
-      event_date_from: undefined,
-      event_date_to: undefined,
+      event_date_from: "",
+      event_date_to: "",
       profit_center: 0,
-      file: null,
     },
   });
 
@@ -55,7 +54,6 @@ export default function FormImportData() {
     resolver: zodResolver(createAttendanceSchema),
     defaultValues: {
       event_id: "",
-      file: null,
     },
   });
 
@@ -85,10 +83,56 @@ export default function FormImportData() {
   ) => {
     setIsLoading(true);
     try {
+      let eventId = data.event_id;
+
+      // Validasi jika tidak ada event yang dipilih
+      if (!eventId) {
+        throw new Error("Please select an event or create a new one");
+      }
+
+      // Jika user memilih "Create New Event", buat event baru terlebih dahulu
+      if (data.event_id === "0") {
+        const formData = form.getValues();
+
+        // Validasi data event baru
+        if (
+          !formData.name ||
+          !formData.event_date_from ||
+          !formData.event_date_to
+        ) {
+          throw new Error("Please fill all required fields for new event");
+        }
+
+        const eventData = {
+          name: formData.name,
+          created_by: 1, // TODO: Get from auth context
+          modified_by: 1, // TODO: Get from auth context
+          profit_center: formData.profit_center || 1,
+          event_date_from: formData.event_date_from,
+          event_date_to: formData.event_date_to,
+        };
+
+        const createdEvent = await createEvent.mutateAsync(eventData);
+        eventId = createdEvent.id.toString();
+      }
+
+      // Validasi file
+      if (!data.file) {
+        throw new Error("Please select a file to upload");
+      }
+
+      // Upload attendance dengan event_id yang sudah ada atau baru dibuat
       await createAttendance.mutateAsync({
-        event_id: data.event_id,
+        event_id: eventId,
         file: data.file,
       });
+
+      // Reset form setelah berhasil
+      formAttendance.reset();
+      form.reset();
+    } catch (error) {
+      console.error("Error submitting attendance:", error);
+      // Handle error appropriately - you might want to show a toast or error message
     } finally {
       setIsLoading(false);
     }
@@ -106,16 +150,15 @@ export default function FormImportData() {
           render={({ field }) => (
             <FormItem>
               <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                Profit Center
+                Event
               </FormLabel>
-              <Select onValueChange={field.onChange}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Event" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="1">Select Event</SelectItem>
                   <SelectItem value="0">Create New Event</SelectItem>
                   {events?.map((event: EventDto) => (
                     <SelectItem key={event.id} value={event.id.toString()}>
@@ -128,22 +171,22 @@ export default function FormImportData() {
             </FormItem>
           )}
         />
-        {form.watch("profit_center") === "0" && (
+        {formAttendance.watch("event_id") === "0" && (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-6">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                      Nama Event
+                      Add New Event
                     </FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type="text"
-                        placeholder="john_doe"
+                        placeholder="Enter event name"
                         className="w-full px-4 py-2 border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
                         disabled={isLoading}
                       />
@@ -157,38 +200,26 @@ export default function FormImportData() {
                 name="event_date_from"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Start Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Date
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="datetime-local"
+                        className="w-full px-4 py-2 border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
+                        value={
+                          field.value
+                            ? new Date(field.value).toISOString().slice(0, 16)
+                            : ""
+                        }
+                        onChange={(e) => {
+                          const dateValue = e.target.value
+                            ? new Date(e.target.value)
+                            : "";
+                          field.onChange(dateValue);
+                        }}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -198,72 +229,31 @@ export default function FormImportData() {
                 name="event_date_to"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>End Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="profit_center"
-                render={({ field }) => (
-                  <FormItem>
                     <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                      Profit Center
+                      End Date
                     </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value.toString()}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a verified email to display" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {profitCenter?.map((item) => (
-                          <SelectItem key={item.id} value={item.id.toString()}>
-                            {item.profit_center}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input
+                        type="datetime-local"
+                        className="w-full px-4 py-2 border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
+                        value={
+                          field.value
+                            ? new Date(field.value).toISOString().slice(0, 16)
+                            : ""
+                        }
+                        onChange={(e) => {
+                          const dateValue = e.target.value
+                            ? new Date(e.target.value)
+                            : "";
+                          field.onChange(dateValue);
+                        }}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </form>
+            </div>
           </Form>
         )}
         <FormField
@@ -276,8 +266,10 @@ export default function FormImportData() {
               </FormLabel>
               <FormControl>
                 <Input
-                  {...field}
                   type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => field.onChange(e.target.files?.[0] || null)}
+                  value=""
                   className="w-full px-4 py-2 border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
                   disabled={isLoading}
                 />

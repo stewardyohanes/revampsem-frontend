@@ -291,8 +291,10 @@ const API = {
     CREATE: async (data: CreateEventDto): Promise<ApiResponseDto<EventDto>> => {
       try {
         const response = await axios.post(CONFIG.ENDPOINTS.EVENTS.BASE, data);
+        console.log("x", response);
         return response.data;
       } catch (error) {
+        console.log(error);
         if (axios.isAxiosError(error)) {
           throw handleApiError(error);
         }
