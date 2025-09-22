@@ -391,10 +391,14 @@ const API = {
     },
 
     CREATE: async (
-      data: CreatePresentDto
+      data: CreatePresentDto,
+      eventId?: number
     ): Promise<ApiResponseDto<PresentDto>> => {
       try {
-        const response = await axios.post(CONFIG.ENDPOINTS.PRESENTS.BASE, data);
+        const url = eventId
+          ? `${CONFIG.ENDPOINTS.PRESENTS.BASE}?event_id=${eventId}`
+          : CONFIG.ENDPOINTS.PRESENTS.BASE;
+        const response = await axios.post(url, data);
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error)) {
