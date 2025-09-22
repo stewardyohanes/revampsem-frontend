@@ -1,6 +1,6 @@
 import {AuthApiService} from "../api";
 import {useQuery} from "@tanstack/react-query";
-import {AuthCheckResponseDto} from "../../../types/dto";
+import {AuthCheckResponseDto} from "../dtos";
 import {getAuthToken} from "../../../lib/token-manager";
 
 export const useIsAuth = () => {

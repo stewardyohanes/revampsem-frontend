@@ -6,31 +6,35 @@ import {
   getAuthToken,
   clearAuthData,
 } from "../lib/token-manager";
+// Authentication DTOs
 import {
-  // Authentication DTOs
   LoginDto,
   LoginResponseDto,
   AuthCheckResponseDto,
+} from "../services/auth/dtos";
 
-  // User DTOs
+// User DTOs
+import {
   UserDto,
   CreateUserDto,
   UpdateUserDto,
   ProfitCenterDto,
   LogActivityDto,
+} from "../services/users/dtos";
 
-  // Event DTOs
+// Event DTOs
+import {
   EventDto,
   CreateEventDto,
   UploadAttendanceDto,
-
-  // Present DTOs
   PresentDto,
   CreatePresentDto,
   UpdatePresentDto,
   PresentQueryParamsDto,
+} from "../services/event/dtos";
 
-  // Sync DTOs
+// Common DTOs (tetap di types/dto.ts)
+import {
   SyncDto,
   SyncResultDto,
   SyncStatusDto,
@@ -38,8 +42,6 @@ import {
   ConnectionTestDto,
   SyncStatsDto,
   SyncDataDto,
-
-  // Common DTOs
   ApiResponseDto,
   PaginatedResponseDto,
 } from "../types/dto";

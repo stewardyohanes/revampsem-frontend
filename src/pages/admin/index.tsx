@@ -23,7 +23,7 @@ import { ModalForm } from "../../components/modal-form.tsx";
 
 import FormImportData from "./components/form-import-data.tsx";
 import API from "../../networks/api.ts";
-import { EventDto, PresentDto } from "../../types/dto";
+import { EventDto, PresentDto } from "../../services/event/dtos";
 import { useEffect } from "react";
 
 const columns: ColumnDef<PresentDto>[] = [

@@ -24,7 +24,7 @@ export const useCreateUser = () => {
         password: "", // Not returned from API for security
         profit_center_id: user.profit_center_id || 0,
         level: 0, // Default value
-        reset_password: user.reset_password,
+        reset_password: user.reset_password || false,
         token: "", // Not returned from create API
         created_at: user.created_at,
         updated_at: user.updated_at,

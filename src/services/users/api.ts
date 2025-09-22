@@ -1,11 +1,12 @@
 import API from "../../networks/api.ts";
-import { CreateUserDTO, UpdateUserDTO } from "./dtos";
 import { 
+  CreateUserDTO, 
+  UpdateUserDTO,
   UserDto, 
   CreateUserDto, 
   UpdateUserDto, 
   ProfitCenterDto
-} from "../../types/dto";
+} from "./dtos";
 
 export class UserApiService {
   async getUsers(): Promise<UserDto[]> {

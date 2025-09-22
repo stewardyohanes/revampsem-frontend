@@ -8,7 +8,7 @@ import { UserEntity } from "../../users/entities/UserEntity";
 import { LoginDTO } from "../dtos";
 import { useToast } from "../../../hooks/use-toast";
 import { AxiosError } from "axios";
-import { LoginResponseDto } from "../../../types/dto";
+import { LoginResponseDto } from "../dtos";
 import { setUserData } from "../../../lib/token-manager";
 
 export const useAuthLogin = (): UseMutationResult<
@@ -40,7 +40,7 @@ export const useAuthLogin = (): UseMutationResult<
         password: "",
         profit_center_id: userData.profit_center_id || 0,
         level: 0,
-        reset_password: userData.reset_password,
+        reset_password: userData.reset_password || false,
         token,
         created_at: userData.created_at,
         updated_at: userData.updated_at,

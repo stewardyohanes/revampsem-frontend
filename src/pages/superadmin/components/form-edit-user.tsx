@@ -8,7 +8,7 @@ import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {updateUserSchema} from "../../../services/users/validators";
 import {useUpdateUser} from "../../../services/users/hooks/use-update-user.ts";
-import {UserDto} from "../../../types/dto";
+import {UserDto} from "../../../services/users/dtos";
 
 export function FormEditUser({setOpen, userId, user}: {setOpen: (open: boolean) => void, userId:number, user: UserDto}) {
    const [isLoading, setIsLoading] = useState(false)

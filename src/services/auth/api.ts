@@ -1,6 +1,5 @@
 import API from "../../networks/api";
-import { LoginDTO } from "./dtos";
-import { LoginDto, LoginResponseDto, AuthCheckResponseDto } from "../../types/dto";
+import { LoginDTO, LoginDto, LoginResponseDto, AuthCheckResponseDto } from "./dtos";
 
 export class AuthApiService {
   async login(dto: LoginDTO): Promise<LoginResponseDto> {

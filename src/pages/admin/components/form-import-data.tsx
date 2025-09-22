@@ -35,7 +35,7 @@ import { cn } from "../../../lib/utils.ts";
 import { Calendar } from "../../../components/ui/calendar.tsx";
 import { format } from "date-fns";
 import { useFindEvent } from "../../../services/event/hooks/use-find-event.ts";
-import { EventDto } from "../../../types/dto";
+import { EventDto } from "../../../services/event/dtos";
 import { useCreateAttendance } from "../../../services/event/hooks/use-create-attendance.ts";
 
 export default function FormImportData() {
@@ -67,7 +67,13 @@ export default function FormImportData() {
   const onSubmit = async (data: z.infer<typeof createEventSchema>) => {
     setIsLoading(true);
     try {
-      await createEvent.mutateAsync(data);
+      const eventData = {
+        ...data,
+        created_by: 1, // TODO: Get from auth context
+        modified_by: 1, // TODO: Get from auth context
+        profit_center: data.profit_center || 1,
+      };
+      await createEvent.mutateAsync(eventData);
       form.reset();
     } finally {
       setIsLoading(false);

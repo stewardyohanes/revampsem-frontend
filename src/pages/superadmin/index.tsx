@@ -6,7 +6,7 @@ import {Badge} from "../../components/ui/badge"
 import {Card, CardContent} from "../../components/ui/card.tsx";
 import {DataTable} from "../../components/data-table.tsx";
 import {useFindUsers} from "../../services/users/hooks/use-find-users.ts";
-import {UserDto} from "../../types/dto";
+import {UserDto} from "../../services/users/dtos";
 import {ModalForm} from "../../components/modal-form.tsx";
 import {FormCreateUser} from "./components/form-create-user.tsx";
 import {useState} from "react";

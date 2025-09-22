@@ -12,7 +12,7 @@ import {
 } from "./ui/command.tsx";
 import { cn } from "../lib/utils.ts";
 import { useFindEvent } from "../services/event/hooks/use-find-event.ts";
-import { EventDto } from "../types/dto";
+import { EventDto } from "../services/event/dtos";
 
 export function SearchableEventSelect({
   onSelect,
