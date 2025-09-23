@@ -288,13 +288,20 @@ const API = {
       }
     },
 
-    CREATE: async (data: CreateEventDto): Promise<ApiResponseDto<EventDto>> => {
+    CREATE: async (
+      data: CreateEventDto | FormData
+    ): Promise<ApiResponseDto<EventDto>> => {
       try {
-        const response = await axios.post(CONFIG.ENDPOINTS.EVENTS.BASE, data);
-        console.log("x", response);
+        const headers: Record<string, string> = {};
+        if (data instanceof FormData) {
+          headers["Content-Type"] = CONFIG.HEADERS.CONTENT_TYPE.FORM_DATA;
+        }
+
+        const response = await axios.post(CONFIG.ENDPOINTS.EVENTS.BASE, data, {
+          headers,
+        });
         return response.data;
       } catch (error) {
-        console.log(error);
         if (axios.isAxiosError(error)) {
           throw handleApiError(error);
         }
@@ -341,9 +348,10 @@ const API = {
       try {
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("event_id", eventId.toString());
 
         const response = await axios.post(
-          `${CONFIG.ENDPOINTS.EVENTS.ATTENDANCE}/${eventId}`,
+          CONFIG.ENDPOINTS.EVENTS.ATTENDANCE,
           formData,
           {
             headers: {

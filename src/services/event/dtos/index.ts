@@ -12,12 +12,10 @@ export interface EventDto {
 }
 
 export interface CreateEventDto {
-  name: string;
-  created_by: number;
-  modified_by: number;
-  profit_center: number;
-  event_date_from: string | Date;
-  event_date_to: string | Date;
+  event: string;
+  start_date: Date;
+  end_date: Date;
+  profit_center_id?: number;
 }
 
 export interface UploadAttendanceDto {

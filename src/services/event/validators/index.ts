@@ -1,11 +1,10 @@
 import { z } from "zod";
 
 export const createEventSchema = z.object({
-  name: z.string().min(3).max(255),
-  event_date_from: z.date(),
-  event_date_to: z.date(),
-  profit_center: z.any().optional(),
-  file: z.any().optional(),
+  event: z.string().min(3).max(255),
+  start_date: z.date(),
+  end_date: z.date(),
+  profit_center_id: z.number().optional().nullable(),
 });
 
 export const createAttendanceSchema = z.object({

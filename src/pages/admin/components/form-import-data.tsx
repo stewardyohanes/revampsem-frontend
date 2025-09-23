@@ -8,7 +8,7 @@ import {
 } from "../../../components/ui/form.tsx";
 import { Input } from "../../../components/ui/input.tsx";
 import { Button } from "../../../components/ui/button.tsx";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,8 +16,6 @@ import {
   createAttendanceSchema,
   createEventSchema,
 } from "../../../services/event/validators";
-import { useCreateEvent } from "../../../services/event/hooks/use-create-event.ts";
-import { useFindProfitCenter } from "../../../services/users/hooks/use-find-profit-center.ts";
 import { useState } from "react";
 import {
   Select,
@@ -26,27 +24,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../../components/ui/select.tsx";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../../../components/ui/popover.tsx";
-import { cn } from "../../../lib/utils.ts";
-import { Calendar } from "../../../components/ui/calendar.tsx";
-import { format } from "date-fns";
 import { useFindEvent } from "../../../services/event/hooks/use-find-event.ts";
 import { EventDto } from "../../../services/event/dtos";
-import { useCreateAttendance } from "../../../services/event/hooks/use-create-attendance.ts";
+import { EventApiService } from "../../../services/event/api.ts";
+import { useToast } from "../../../hooks/use-toast.ts";
 
 export default function FormImportData() {
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const eventApiService = new EventApiService();
+
   const form = useForm<z.infer<typeof createEventSchema>>({
     resolver: zodResolver(createEventSchema),
     defaultValues: {
-      name: "",
-      event_date_from: "",
-      event_date_to: "",
-      profit_center: 0,
+      event: "",
+      start_date: new Date(),
+      end_date: new Date(),
+      profit_center_id: null,
     },
   });
 
@@ -57,82 +51,97 @@ export default function FormImportData() {
     },
   });
 
-  const createEvent = useCreateEvent();
-  const createAttendance = useCreateAttendance();
-  const { data: profitCenter } = useFindProfitCenter();
   const { data: events } = useFindEvent();
-
-  const onSubmit = async (data: z.infer<typeof createEventSchema>) => {
-    setIsLoading(true);
-    try {
-      const eventData = {
-        ...data,
-        created_by: 1, // TODO: Get from auth context
-        modified_by: 1, // TODO: Get from auth context
-        profit_center: data.profit_center || 1,
-      };
-      await createEvent.mutateAsync(eventData);
-      form.reset();
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const onSubmitAttendance = async (
     data: z.infer<typeof createAttendanceSchema>
   ) => {
     setIsLoading(true);
     try {
-      let eventId = data.event_id;
-
-      // Validasi jika tidak ada event yang dipilih
-      if (!eventId) {
-        throw new Error("Please select an event or create a new one");
+      if (!data.event_id) {
+        toast({
+          title: "Error",
+          description: "Silakan pilih event atau buat event baru",
+          variant: "destructive",
+        });
+        return;
       }
 
-      // Jika user memilih "Create New Event", buat event baru terlebih dahulu
-      if (data.event_id === "0") {
-        const formData = form.getValues();
+      if (!data.file) {
+        toast({
+          title: "Error",
+          description: "Silakan pilih file untuk diupload",
+          variant: "destructive",
+        });
+        return;
+      }
 
-        // Validasi data event baru
+      const eventId = parseInt(data.event_id);
+
+      if (eventId !== 0) {
+        await eventApiService.insertAttendance(eventId.toString(), data.file);
+
+        toast({
+          title: "Berhasil",
+          description: "Attendance berhasil diupload ke event yang sudah ada",
+        });
+
+        formAttendance.reset();
+        form.reset();
+      } else {
+        const eventValues = form.getValues();
+
         if (
-          !formData.name ||
-          !formData.event_date_from ||
-          !formData.event_date_to
+          !eventValues.event ||
+          !eventValues.start_date ||
+          !eventValues.end_date
         ) {
-          throw new Error("Please fill all required fields for new event");
+          toast({
+            title: "Error",
+            description: "Data event tidak lengkap untuk membuat event baru",
+            variant: "destructive",
+          });
+          return;
         }
 
-        const eventData = {
-          name: formData.name,
-          created_by: 1, // TODO: Get from auth context
-          modified_by: 1, // TODO: Get from auth context
-          profit_center: formData.profit_center || 1,
-          event_date_from: formData.event_date_from,
-          event_date_to: formData.event_date_to,
-        };
+        const formData = new FormData();
+        formData.append("event", eventValues.event);
+        formData.append("start_date", eventValues.start_date.toISOString());
+        formData.append("end_date", eventValues.end_date.toISOString());
 
-        const createdEvent = await createEvent.mutateAsync(eventData);
-        eventId = createdEvent.id.toString();
+        if (
+          eventValues.profit_center_id !== null &&
+          eventValues.profit_center_id !== undefined
+        ) {
+          const profitCenterId = eventValues.profit_center_id.toString();
+          formData.append("profit_center_id", profitCenterId);
+        }
+
+        formData.append("file", data.file);
+
+        await eventApiService.insertEvent({
+          event: eventValues.event,
+          start_date: eventValues.start_date,
+          end_date: eventValues.end_date,
+          profit_center_id: eventValues.profit_center_id ?? undefined,
+        });
+
+        toast({
+          title: "Berhasil",
+          description:
+            "Event baru berhasil dibuat dan attendance berhasil diupload",
+        });
+
+        formAttendance.reset();
+        form.reset();
       }
-
-      // Validasi file
-      if (!data.file) {
-        throw new Error("Please select a file to upload");
-      }
-
-      // Upload attendance dengan event_id yang sudah ada atau baru dibuat
-      await createAttendance.mutateAsync({
-        event_id: eventId,
-        file: data.file,
-      });
-
-      // Reset form setelah berhasil
-      formAttendance.reset();
-      form.reset();
     } catch (error) {
-      console.error("Error submitting attendance:", error);
-      // Handle error appropriately - you might want to show a toast or error message
+      console.error("Error processing attendance:", error);
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat memproses attendance",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -176,7 +185,7 @@ export default function FormImportData() {
             <div className="space-y-6">
               <FormField
                 control={form.control}
-                name="name"
+                name="event"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
@@ -197,7 +206,7 @@ export default function FormImportData() {
               />
               <FormField
                 control={form.control}
-                name="event_date_from"
+                name="start_date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
@@ -215,7 +224,7 @@ export default function FormImportData() {
                         onChange={(e) => {
                           const dateValue = e.target.value
                             ? new Date(e.target.value)
-                            : "";
+                            : new Date();
                           field.onChange(dateValue);
                         }}
                       />
@@ -226,7 +235,7 @@ export default function FormImportData() {
               />
               <FormField
                 control={form.control}
-                name="event_date_to"
+                name="end_date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
@@ -244,7 +253,7 @@ export default function FormImportData() {
                         onChange={(e) => {
                           const dateValue = e.target.value
                             ? new Date(e.target.value)
-                            : "";
+                            : new Date();
                           field.onChange(dateValue);
                         }}
                       />

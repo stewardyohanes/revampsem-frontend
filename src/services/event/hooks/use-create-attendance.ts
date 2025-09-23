@@ -16,29 +16,32 @@ export const useCreateAttendance = () => {
       event_id: string;
       file: File;
     }) => {
-      const event = await api.insertAttendance(event_id, file);
-      if (!event) {
-        throw new Error("Event creation failed");
+      const result = await api.insertAttendance(event_id, file);
+      if (!result) {
+        throw new Error("Attendance upload failed");
       }
-      return event;
+      return result;
     },
     onSuccess: async () => {
       toast({
-        title: "Event created",
-        description: "Event has been created successfully",
+        title: "Attendance uploaded",
+        description: "Attendance has been uploaded successfully",
       });
       await queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      await queryClient.invalidateQueries({ queryKey: ["events"] });
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
         toast({
-          title: "Event creation failed",
-          description: error.response?.data.message,
+          title: "Attendance upload failed",
+          description: error.response?.data.message || error.message,
+          variant: "destructive",
         });
       } else {
         toast({
-          title: "Event creation failed",
+          title: "Attendance upload failed",
           description: error.message,
+          variant: "destructive",
         });
       }
     },
