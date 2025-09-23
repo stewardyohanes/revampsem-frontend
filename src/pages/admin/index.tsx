@@ -7,13 +7,6 @@ import {
 import { Button } from "../../components/ui/button.tsx";
 import { Database, FileSpreadsheet, Plus, Upload } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select.tsx";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -195,7 +188,6 @@ const addPesertaSchema = z.object({
 });
 
 export default function AdminPage() {
-  const [selectedStatus, setSelectedStatus] = useState("");
   const [openImportModal, setOpenImportModal] = useState(false);
   const [openAddPesertaModal, setOpenAddPesertaModal] = useState(false);
   const [eventID, setEventID] = useState("");
@@ -389,17 +381,6 @@ export default function AdminPage() {
                 setSelectedEvent(event);
               }}
             />
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           <Dialog
             open={openAddPesertaModal}
