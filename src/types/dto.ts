@@ -1,11 +1,3 @@
-/**
- * Data Transfer Objects (DTOs) for API Communication
- * Defines the structure of data sent to and received from API endpoints
- * 
- * Note: DTOs yang digunakan di services telah dipindahkan ke masing-masing service folder.
- * File ini hanya berisi DTOs umum yang digunakan di networks/api.ts dan tidak terkait service tertentu.
- */
-
 // ===== Sync DTOs =====
 export interface SyncDto {
   file: File;

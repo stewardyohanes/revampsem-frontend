@@ -28,10 +28,12 @@ import { useFindEvent } from "../../../services/event/hooks/use-find-event.ts";
 import { EventDto } from "../../../services/event/dtos";
 import { EventApiService } from "../../../services/event/api.ts";
 import { useToast } from "../../../hooks/use-toast.ts";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function FormImportData() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const eventApiService = new EventApiService();
 
   const form = useForm<z.infer<typeof createEventSchema>>({
@@ -81,6 +83,9 @@ export default function FormImportData() {
       if (eventId !== 0) {
         await eventApiService.insertAttendance(eventId.toString(), data.file);
 
+        await queryClient.invalidateQueries({ queryKey: ["events"] });
+        await queryClient.invalidateQueries({ queryKey: ["attendance"] });
+
         toast({
           title: "Berhasil",
           description: "Attendance berhasil diupload ke event yang sudah ada",
@@ -104,27 +109,23 @@ export default function FormImportData() {
           return;
         }
 
-        const formData = new FormData();
-        formData.append("event", eventValues.event);
-        formData.append("start_date", eventValues.start_date.toISOString());
-        formData.append("end_date", eventValues.end_date.toISOString());
-
-        if (
-          eventValues.profit_center_id !== null &&
-          eventValues.profit_center_id !== undefined
-        ) {
-          const profitCenterId = eventValues.profit_center_id.toString();
-          formData.append("profit_center_id", profitCenterId);
-        }
-
-        formData.append("file", data.file);
-
-        await eventApiService.insertEvent({
+        const newEvent = await eventApiService.insertEvent({
           event: eventValues.event,
           start_date: eventValues.start_date,
           end_date: eventValues.end_date,
           profit_center_id: eventValues.profit_center_id ?? undefined,
         });
+
+        if (newEvent && newEvent.id) {
+          await eventApiService.insertAttendance(
+            newEvent.id.toString(),
+            data.file
+          );
+        }
+
+        // Invalidate queries to refresh data
+        await queryClient.invalidateQueries({ queryKey: ["events"] });
+        await queryClient.invalidateQueries({ queryKey: ["attendance"] });
 
         toast({
           title: "Berhasil",
