@@ -323,17 +323,22 @@ export default function AdminPage() {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3">
           <ExcelExportXLSX
-            data={attendeesData.map((item) => ({
+            data={attendeesData.map((item, index) => ({
+              no: index + 1,
               invoice: item.invoice || "",
               name: item.name,
               email: item.email || "",
               no_telp: item.no_telp || "",
-              event: item.Event?.event || "",
-              status: item.status,
-              createdAt: item.createdAt,
             }))}
             filename={`Template Seminar ${new Date().getFullYear()}.xlsx`}
             text={"Download Template"}
+            customHeaders={{
+              no: "No",
+              invoice: "Invoice",
+              name: "Nama",
+              email: "Email",
+              no_telp: "No Telepon",
+            }}
           />
           <ModalForm
             open={openImportModal}
