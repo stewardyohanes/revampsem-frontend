@@ -28,12 +28,12 @@ import { useFindEvent } from "../../../services/event/hooks/use-find-event.ts";
 import { EventDto } from "../../../services/event/dtos";
 import { EventApiService } from "../../../services/event/api.ts";
 import { useToast } from "../../../hooks/use-toast.ts";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuerySync } from "../../../hooks/use-query-sync.ts";
 
 export default function FormImportData() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { triggerDataUpdate } = useQuerySync();
   const eventApiService = new EventApiService();
 
   const form = useForm<z.infer<typeof createEventSchema>>({
@@ -83,8 +83,11 @@ export default function FormImportData() {
       if (eventId !== 0) {
         await eventApiService.insertAttendance(eventId.toString(), data.file);
 
-        await queryClient.invalidateQueries({ queryKey: ["events"] });
-        await queryClient.invalidateQueries({ queryKey: ["attendance"] });
+        // Trigger real-time data update
+        await triggerDataUpdate({
+          eventId: eventId.toString(),
+          type: "all",
+        });
 
         toast({
           title: "Berhasil",
@@ -123,9 +126,11 @@ export default function FormImportData() {
           );
         }
 
-        // Invalidate queries to refresh data
-        await queryClient.invalidateQueries({ queryKey: ["events"] });
-        await queryClient.invalidateQueries({ queryKey: ["attendance"] });
+        // Trigger real-time data update for new event
+        await triggerDataUpdate({
+          eventId: newEvent?.id?.toString(),
+          type: "all",
+        });
 
         toast({
           title: "Berhasil",

@@ -38,6 +38,8 @@ import FormImportData from "./components/form-import-data.tsx";
 import API from "../../networks/api.ts";
 import { EventDto, PresentDto } from "../../services/event/dtos";
 import { useEffect } from "react";
+import { useFindEvent } from "../../services/event/hooks/use-find-event.ts";
+import { useQuerySync } from "../../hooks/use-query-sync.ts";
 
 const columns: ColumnDef<PresentDto>[] = [
   {
@@ -191,9 +193,12 @@ export default function AdminPage() {
   const [openAddPesertaModal, setOpenAddPesertaModal] = useState(false);
   const [eventID, setEventID] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<EventDto | null>(null);
-  const [eventsData, setEventsData] = useState<EventDto[]>([]);
   const [attendeesData, setAttendeesData] = useState<PresentDto[]>([]);
   const { toast } = useToast();
+  const { triggerDataUpdate } = useQuerySync();
+
+  // Use React Query for events data
+  const { data: eventsData = [] } = useFindEvent();
 
   const addPesertaForm = useForm<z.infer<typeof addPesertaSchema>>({
     resolver: zodResolver(addPesertaSchema),
@@ -208,20 +213,21 @@ export default function AdminPage() {
     },
   });
 
-  useEffect(() => {
-    const GET_ALL_EVENTS = async () => {
-      try {
-        const response = await API.EVENTS.GET_ALL();
-        if (response.success && response.data) {
-          setEventsData(response.data);
-        }
-      } catch (error) {
-        console.error("Error get all events:", error);
-      }
-    };
+  // Remove manual API call since we're using React Query
+  // useEffect(() => {
+  //   const GET_ALL_EVENTS = async () => {
+  //     try {
+  //       const response = await API.EVENTS.GET_ALL();
+  //       if (response.success && response.data) {
+  //         setEventsData(response.data);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error get all events:", error);
+  //     }
+  //   };
 
-    GET_ALL_EVENTS();
-  }, []);
+  //   GET_ALL_EVENTS();
+  // }, []);
 
   useEffect(() => {
     if (eventID && eventsData.length > 0) {
@@ -396,18 +402,11 @@ export default function AdminPage() {
           description: "Participant has been added successfully",
         });
 
-        if (eventID) {
-          const updatedResponse = await API.EVENTS.GET_ALL();
-          if (updatedResponse.success && updatedResponse.data) {
-            setEventsData(updatedResponse.data);
-            const selectedEvent = updatedResponse.data.find(
-              (event) => event.id.toString() === eventID
-            );
-            if (selectedEvent && selectedEvent.Present) {
-              setAttendeesData(selectedEvent.Present);
-            }
-          }
-        }
+        // Trigger real-time data update
+        await triggerDataUpdate({
+          eventId: eventID,
+          type: "all",
+        });
 
         console.log("Participant created successfully");
       }
