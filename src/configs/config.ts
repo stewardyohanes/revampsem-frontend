@@ -21,11 +21,7 @@ const CONFIG = {
       BASE: "/presents",
     },
     SYNC: {
-      HEALTH: "/sync/health",
-      TEST_CONNECTIONS: "/sync/test-connections",
-      STATS: "/sync/stats",
-      SYNC_ALL: "/sync/events",
-      SYNC_INCREMENTAL: "/sync/events/incremental",
+      SYNC_ALL: "/sync/all",
     },
   },
 

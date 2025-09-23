@@ -377,6 +377,42 @@ export default function AdminPage() {
     });
   };
 
+  const handleSyncDatabase = async () => {
+    try {
+      toast({
+        title: "Sinkronisasi Dimulai",
+        description: "Proses sinkronisasi database sedang berjalan...",
+      });
+
+      const response = await API.SYNC.SYNC_ALL();
+
+      if (response.message) {
+        toast({
+          title: "Sinkronisasi Berhasil",
+          description: `${response.message}. ${response.synced_records} record berhasil disinkronkan.`,
+        });
+
+        // Trigger real-time data update after successful sync
+        await triggerDataUpdate({
+          type: "all",
+        });
+
+        console.log("Database sync completed successfully:", response);
+      }
+    } catch (error) {
+      console.error("Error syncing database:", error);
+
+      toast({
+        title: "Sinkronisasi Gagal",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Terjadi kesalahan saat melakukan sinkronisasi database",
+        variant: "destructive",
+      });
+    }
+  };
+
   const onSubmitAddParticipant = async (
     data: z.infer<typeof addPesertaSchema>
   ) => {
@@ -471,7 +507,7 @@ export default function AdminPage() {
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Export CSV
           </Button>
-          <Button variant="default">
+          <Button variant="default" onClick={handleSyncDatabase}>
             <Database className="mr-2 h-4 w-4" />
             Sync Database
           </Button>

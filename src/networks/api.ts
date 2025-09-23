@@ -6,14 +6,13 @@ import {
   getAuthToken,
   clearAuthData,
 } from "../lib/token-manager";
-// Authentication DTOs
+
 import {
   LoginDto,
   LoginResponseDto,
   AuthCheckResponseDto,
 } from "../services/auth/dtos";
 
-// User DTOs
 import {
   UserDto,
   CreateUserDto,
@@ -22,7 +21,6 @@ import {
   LogActivityDto,
 } from "../services/users/dtos";
 
-// Event DTOs
 import {
   EventDto,
   CreateEventDto,
@@ -33,7 +31,6 @@ import {
   PresentQueryParamsDto,
 } from "../services/event/dtos";
 
-// Common DTOs (tetap di types/dto.ts)
 import {
   SyncDto,
   SyncResultDto,
@@ -46,13 +43,11 @@ import {
   PaginatedResponseDto,
 } from "../types/dto";
 
-// Configure axios defaults
 axios.defaults.baseURL = `${CONFIG.BASE_URL}${CONFIG.API_VERSION}`;
 axios.defaults.timeout = CONFIG.TIMEOUT;
 axios.defaults.headers.common["Content-Type"] =
   CONFIG.HEADERS.CONTENT_TYPE.JSON;
 
-// Request interceptor to add auth token
 axios.interceptors.request.use(
   (config) => {
     const token = getAuthToken();
@@ -66,7 +61,6 @@ axios.interceptors.request.use(
   }
 );
 
-// Response interceptor for global error handling
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -78,7 +72,6 @@ axios.interceptors.response.use(
   }
 );
 
-// Clean API Object Pattern
 const API = {
   AUTH: {
     LOGIN: async (data: LoginDto): Promise<LoginResponseDto> => {
@@ -93,7 +86,6 @@ const API = {
         let token = null;
         let userData = null;
 
-        // Extract token from various possible locations
         if (responseData.token) {
           token = responseData.token;
         } else if (responseData.data && responseData.data.token) {
@@ -102,7 +94,6 @@ const API = {
           token = responseData.access_token;
         }
 
-        // Extract user data from various possible locations
         if (responseData.user) {
           userData = responseData.user;
         } else if (responseData.data && responseData.data.user) {
@@ -452,78 +443,14 @@ const API = {
   },
 
   SYNC: {
-    HEALTH_CHECK: async (): Promise<HealthCheckDto> => {
+    SYNC_ALL: async (): Promise<SyncDataDto> => {
       try {
-        const response = await axios.get(CONFIG.ENDPOINTS.SYNC.HEALTH);
-        return response.data;
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          throw handleApiError(error);
-        }
-        throw error;
-      }
-    },
-
-    TEST_CONNECTIONS: async (): Promise<ConnectionTestDto> => {
-      try {
-        const response = await axios.get(
-          CONFIG.ENDPOINTS.SYNC.TEST_CONNECTIONS
-        );
-        return response.data;
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          throw handleApiError(error);
-        }
-        throw error;
-      }
-    },
-
-    GET_STATS: async (): Promise<SyncStatsDto> => {
-      try {
-        const response = await axios.get(CONFIG.ENDPOINTS.SYNC.STATS);
-        return response.data;
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          throw handleApiError(error);
-        }
-        throw error;
-      }
-    },
-
-    SYNC_ALL: async (file: File): Promise<SyncDataDto> => {
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
-
         const response = await axios.post(
           CONFIG.ENDPOINTS.SYNC.SYNC_ALL,
-          formData,
+          {},
           {
             headers: {
-              "Content-Type": CONFIG.HEADERS.CONTENT_TYPE.FORM_DATA,
-            },
-          }
-        );
-        return response.data;
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          throw handleApiError(error);
-        }
-        throw error;
-      }
-    },
-
-    SYNC_INCREMENTAL: async (file: File): Promise<SyncDataDto> => {
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const response = await axios.post(
-          CONFIG.ENDPOINTS.SYNC.SYNC_INCREMENTAL,
-          formData,
-          {
-            headers: {
-              "Content-Type": CONFIG.HEADERS.CONTENT_TYPE.FORM_DATA,
+              "Content-Type": CONFIG.HEADERS.CONTENT_TYPE.JSON,
             },
           }
         );
