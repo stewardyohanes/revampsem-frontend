@@ -176,7 +176,6 @@ const columns: ColumnDef<PresentDto>[] = [
   },
 ];
 
-// Schema for Add Participant form
 const addPesertaSchema = z.object({
   invoice: z.string().optional(),
   name: z.string().min(1, "Name is required"),
@@ -196,7 +195,6 @@ export default function AdminPage() {
   const [attendeesData, setAttendeesData] = useState<PresentDto[]>([]);
   const { toast } = useToast();
 
-  // Form for Add Participant
   const addPesertaForm = useForm<z.infer<typeof addPesertaSchema>>({
     resolver: zodResolver(addPesertaSchema),
     defaultValues: {
@@ -210,7 +208,6 @@ export default function AdminPage() {
     },
   });
 
-  // Fetch events data dengan Present
   useEffect(() => {
     const GET_ALL_EVENTS = async () => {
       try {
@@ -226,7 +223,6 @@ export default function AdminPage() {
     GET_ALL_EVENTS();
   }, []);
 
-  // Update attendees data ketika eventID berubah
   useEffect(() => {
     if (eventID && eventsData.length > 0) {
       const selectedEventData = eventsData.find(
@@ -242,7 +238,6 @@ export default function AdminPage() {
     }
   }, [eventID, eventsData]);
 
-  // Update form values ketika event dipilih
   useEffect(() => {
     if (selectedEvent) {
       addPesertaForm.setValue("event_id", selectedEvent.id);
@@ -253,37 +248,154 @@ export default function AdminPage() {
     }
   }, [selectedEvent, addPesertaForm]);
 
-  // Handler for Add Participant form submission
+  const handleExportCSV = () => {
+    if (attendeesData.length === 0) {
+      toast({
+        title: "Tidak Ada Data",
+        description: "Tidak ada data peserta untuk diekspor",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const exportData = attendeesData.map((item, index) => ({
+      no: index + 1,
+      invoice: item.invoice || "",
+      name: item.name,
+      email: item.email || "",
+      no_telp: item.no_telp || "",
+      attendance: item.status === 1 ? "Hadir" : "Tidak Hadir",
+    }));
+
+    const headers = {
+      no: "No",
+      invoice: "Invoice",
+      name: "Nama",
+      email: "Email",
+      no_telp: "No Telepon",
+      attendance: "Attendance",
+    };
+
+    const csvHeaders = Object.values(headers).join(",");
+    const csvRows = exportData.map((row) =>
+      Object.keys(headers)
+        .map((key) => {
+          const value = row[key as keyof typeof row];
+          if (typeof value === "string" && value.includes(",")) {
+            return `"${value}"`;
+          }
+          return value;
+        })
+        .join(",")
+    );
+
+    const csvContent = [csvHeaders, ...csvRows].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = window.URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `Data Peserta ${
+        selectedEvent?.event || "Seminar"
+      } ${new Date().getFullYear()}.csv`
+    );
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Export Berhasil",
+      description: "Data peserta berhasil diekspor ke format CSV",
+    });
+  };
+
+  const handleExportExcel = () => {
+    if (attendeesData.length === 0) {
+      toast({
+        title: "Tidak Ada Data",
+        description: "Tidak ada data peserta untuk diekspor",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const exportData = attendeesData.map((item, index) => ({
+      no: index + 1,
+      invoice: item.invoice || "",
+      name: item.name,
+      email: item.email || "",
+      no_telp: item.no_telp || "",
+      attendance: item.status === 1 ? "Hadir" : "Tidak Hadir",
+    }));
+
+    const ExcelExportComponent = (
+      <ExcelExportXLSX
+        data={exportData}
+        filename={`Data Peserta ${
+          selectedEvent?.event || "Seminar"
+        } ${new Date().getFullYear()}.xlsx`}
+        text="Export Excel"
+        customHeaders={{
+          no: "No",
+          invoice: "Invoice",
+          name: "Nama",
+          email: "Email",
+          no_telp: "No Telepon",
+          attendance: "Attendance",
+        }}
+      />
+    );
+
+    const tempDiv = document.createElement("div");
+    document.body.appendChild(tempDiv);
+
+    import("react-dom/client").then(({ createRoot }) => {
+      const root = createRoot(tempDiv);
+      root.render(ExcelExportComponent);
+
+      setTimeout(() => {
+        const button = tempDiv.querySelector("button");
+        if (button) {
+          button.click();
+        }
+        setTimeout(() => {
+          root.unmount();
+          document.body.removeChild(tempDiv);
+        }, 100);
+      }, 100);
+    });
+  };
+
   const onSubmitAddParticipant = async (
     data: z.infer<typeof addPesertaSchema>
   ) => {
     try {
       console.log("Add Participant Data:", data);
 
-      // Prepare data for API call
       const participantData = {
         ...data,
         profit_center_id: data.profit_center_id || 1,
       };
 
-      // Call API to create participant
       const response = await API.PRESENTS.CREATE(
         participantData,
         parseInt(eventID)
       );
 
       if (response.success) {
-        // Reset form and close modal
         addPesertaForm.reset();
         setOpenAddPesertaModal(false);
 
-        // Show success toast
         toast({
           title: "Participant Created",
           description: "Participant has been added successfully",
         });
 
-        // Refresh attendees data
         if (eventID) {
           const updatedResponse = await API.EVENTS.GET_ALL();
           if (updatedResponse.success && updatedResponse.data) {
@@ -302,7 +414,6 @@ export default function AdminPage() {
     } catch (error) {
       console.error("Error adding participant:", error);
 
-      // Show error toast
       toast({
         title: "Failed to Create Participant",
         description:
@@ -320,7 +431,6 @@ export default function AdminPage() {
         <CardTitle>Data Management</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Action Buttons */}
         <div className="flex flex-wrap gap-3">
           <ExcelExportXLSX
             data={attendeesData.map((item, index) => ({
@@ -354,11 +464,11 @@ export default function AdminPage() {
             <FormImportData />
           </ModalForm>
 
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportExcel}>
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Export Excel
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportCSV}>
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Export CSV
           </Button>
@@ -368,7 +478,6 @@ export default function AdminPage() {
           </Button>
         </div>
 
-        {/* Controls */}
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <div className="flex flex-1 gap-4 flex-wrap">
             <SearchableEventSelect
@@ -479,7 +588,6 @@ export default function AdminPage() {
           </Dialog>
         </div>
 
-        {/* DataTable */}
         <DataTable columns={columns} data={attendeesData} />
       </CardContent>
     </Card>
