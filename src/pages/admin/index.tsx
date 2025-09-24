@@ -97,6 +97,7 @@ export default function AdminPage() {
   const [openApprovalDialog, setOpenApprovalDialog] = useState(false);
   const [openApprovedDialog, setOpenApprovedDialog] = useState(false);
   const [openNotAttendDialog, setOpenNotAttendDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedParticipant, setSelectedParticipant] =
     useState<PresentDto | null>(null);
   const [selectedParticipantForApproval, setSelectedParticipantForApproval] =
@@ -275,7 +276,7 @@ export default function AdminPage() {
                 size="sm"
                 variant="destructive"
                 className="w-20 rounded-2xl"
-                onClick={() => console.log("Delete present:", present)}
+                onClick={() => handleDeleteClick(present)}
               >
                 Delete
               </Button>
@@ -303,7 +304,7 @@ export default function AdminPage() {
               size="sm"
               variant="destructive"
               className="w-20 rounded-2xl"
-              onClick={() => console.log("Delete present:", present)}
+              onClick={() => handleDeleteClick(present)}
             >
               Delete
             </Button>
@@ -449,6 +450,11 @@ export default function AdminPage() {
   const handleNotAttendClick = (present: PresentDto) => {
     setSelectedParticipantForApproval(present);
     setOpenNotAttendDialog(true);
+  };
+
+  const handleDeleteClick = (present: PresentDto) => {
+    setSelectedParticipant(present);
+    setOpenDeleteDialog(true);
   };
 
   const handleConfirmApprove = async () => {
@@ -857,6 +863,65 @@ export default function AdminPage() {
           variant: "destructive",
         });
       }
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedParticipant) return;
+
+    try {
+      const response = await API.PRESENTS.DELETE(selectedParticipant.id);
+
+      if (response.success) {
+        toast({
+          title: "Participant Deleted",
+          description: `${selectedParticipant.name} has been deleted successfully`,
+        });
+
+        setOpenDeleteDialog(false);
+        setSelectedParticipant(null);
+
+        if (selectedEvent) {
+          try {
+            const updatedEventResponse = await API.EVENTS.GET_BY_ID(
+              selectedEvent.id
+            );
+            if (
+              updatedEventResponse.success &&
+              updatedEventResponse.data?.Present
+            ) {
+              setAttendeesData(updatedEventResponse.data.Present);
+            }
+          } catch (fetchError) {
+            console.error("Error fetching updated data:", fetchError);
+            await triggerDataUpdate({
+              eventId: eventID,
+              type: "all",
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting participant:", error);
+
+      let errorMessage = "An error occurred while deleting the participant";
+
+      if (error && typeof error === "object" && "response" in error) {
+        const apiError = error as {
+          response?: { data?: { message?: string }; status?: number };
+          message?: string;
+        };
+        errorMessage =
+          apiError.response?.data?.message || apiError.message || errorMessage;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: "Delete Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
@@ -1331,6 +1396,79 @@ export default function AdminPage() {
                   className="flex-1"
                 >
                   Cancel Not Attend
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-red-600">Confirm Delete</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {selectedParticipant && (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600">
+                    Are you sure you want to delete this participant? This
+                    action cannot be undone.
+                  </p>
+                  <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">
+                          Invoice
+                        </label>
+                        <p className="text-sm font-semibold">
+                          {selectedParticipant.invoice || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">
+                          Name
+                        </label>
+                        <p className="text-sm font-semibold">
+                          {selectedParticipant.name}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">
+                          Email
+                        </label>
+                        <p className="text-sm font-semibold">
+                          {selectedParticipant.email || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">
+                          Phone Number
+                        </label>
+                        <p className="text-sm font-semibold">
+                          {selectedParticipant.no_telp || "-"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => setOpenDeleteDialog(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => handleConfirmDelete()}
+                  variant="destructive"
+                  className="flex-1"
+                >
+                  Delete
                 </Button>
               </div>
             </div>
