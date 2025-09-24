@@ -86,7 +86,7 @@ const columns: ColumnDef<PresentDto>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Nama
+          Name
           <CaretSortIcon />
         </Button>
       );
@@ -122,7 +122,7 @@ const columns: ColumnDef<PresentDto>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          No Telepon
+          Phone Number
           <CaretSortIcon />
         </Button>
       );
@@ -257,8 +257,8 @@ export default function AdminPage() {
   const handleExportCSV = () => {
     if (attendeesData.length === 0) {
       toast({
-        title: "Tidak Ada Data",
-        description: "Tidak ada data peserta untuk diekspor",
+        title: "No Data Available",
+        description: "No participant data available for export",
         variant: "destructive",
       });
       return;
@@ -270,15 +270,15 @@ export default function AdminPage() {
       name: item.name,
       email: item.email || "",
       no_telp: item.no_telp || "",
-      attendance: item.status === 1 ? "Hadir" : "Tidak Hadir",
+      attendance: item.status === 1 ? "Present" : "Absent",
     }));
 
     const headers = {
       no: "No",
       invoice: "Invoice",
-      name: "Nama",
+      name: "Name",
       email: "Email",
-      no_telp: "No Telepon",
+      no_telp: "Phone Number",
       attendance: "Attendance",
     };
 
@@ -315,16 +315,16 @@ export default function AdminPage() {
     window.URL.revokeObjectURL(url);
 
     toast({
-      title: "Export Berhasil",
-      description: "Data peserta berhasil diekspor ke format CSV",
+      title: "Export Successful",
+      description: "Participant data has been successfully exported to CSV format",
     });
   };
 
   const handleExportExcel = () => {
     if (attendeesData.length === 0) {
       toast({
-        title: "Tidak Ada Data",
-        description: "Tidak ada data peserta untuk diekspor",
+        title: "No Data Available",
+        description: "No participant data available for export",
         variant: "destructive",
       });
       return;
@@ -336,7 +336,7 @@ export default function AdminPage() {
       name: item.name,
       email: item.email || "",
       no_telp: item.no_telp || "",
-      attendance: item.status === 1 ? "Hadir" : "Tidak Hadir",
+      attendance: item.status === 1 ? "Present" : "Absent",
     }));
 
     const ExcelExportComponent = (
@@ -349,9 +349,9 @@ export default function AdminPage() {
         customHeaders={{
           no: "No",
           invoice: "Invoice",
-          name: "Nama",
+          name: "Name",
           email: "Email",
-          no_telp: "No Telepon",
+          no_telp: "Phone Number",
           attendance: "Attendance",
         }}
       />
@@ -380,34 +380,32 @@ export default function AdminPage() {
   const handleSyncDatabase = async () => {
     try {
       toast({
-        title: "Sinkronisasi Dimulai",
-        description: "Proses sinkronisasi database sedang berjalan...",
+        title: "Synchronization Started",
+        description: "Database synchronization process is running...",
       });
 
       const response = await API.SYNC.SYNC_ALL();
 
       if (response.message) {
         toast({
-          title: "Sinkronisasi Berhasil",
-          description: `${response.message}. ${response.synced_records} record berhasil disinkronkan.`,
+          title: "Synchronization Successful",
+          description: `${response.message}. ${response.synced_records} records successfully synchronized.`,
         });
 
         // Trigger real-time data update after successful sync
         await triggerDataUpdate({
           type: "all",
         });
-
-        console.log("Database sync completed successfully:", response);
       }
     } catch (error) {
       console.error("Error syncing database:", error);
 
       toast({
-        title: "Sinkronisasi Gagal",
+        title: "Synchronization Failed",
         description:
           error instanceof Error
             ? error.message
-            : "Terjadi kesalahan saat melakukan sinkronisasi database",
+            : "An error occurred while synchronizing the database",
         variant: "destructive",
       });
     }
@@ -417,8 +415,6 @@ export default function AdminPage() {
     data: z.infer<typeof addPesertaSchema>
   ) => {
     try {
-      console.log("Add Participant Data:", data);
-
       const participantData = {
         ...data,
         profit_center_id: data.profit_center_id || 1,
@@ -443,20 +439,35 @@ export default function AdminPage() {
           eventId: eventID,
           type: "all",
         });
-
-        console.log("Participant created successfully");
       }
     } catch (error) {
       console.error("Error adding participant:", error);
 
-      toast({
-        title: "Failed to Create Participant",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An error occurred while creating the participant",
-        variant: "destructive",
-      });
+      // Extract error message directly from backend response
+      let errorMessage =
+        "Please check and ensure the invoice and email are not duplicates";
+
+      // Check if error is from API response (AxiosError)
+      if (error && typeof error === "object" && "response" in error) {
+        const apiError = error as {
+          response?: { data?: { message?: string }; status?: number };
+          message?: string;
+        };
+        errorMessage =
+          apiError.response?.data?.message || apiError.message || "";
+      }
+      // Fallback for other error types
+      else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      // Only show toast if we have a message from backend
+      if (errorMessage) {
+        toast({
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -480,15 +491,15 @@ export default function AdminPage() {
             customHeaders={{
               no: "No",
               invoice: "Invoice",
-              name: "Nama",
+              name: "Name",
               email: "Email",
-              no_telp: "No Telepon",
+              no_telp: "Phone Number",
             }}
           />
           <ModalForm
             open={openImportModal}
             setOpen={setOpenImportModal}
-            title={"Import Data Seminar"}
+            title={"Import Seminar Data"}
             triggerText={
               <Button variant="outline">
                 <Upload className="mr-2 h-4 w-4" />
