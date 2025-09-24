@@ -62,7 +62,7 @@ const updateParticipantSchema = z.object({
     .or(z.literal(""))
     .refine(
       (val) => {
-        if (!val || val === "") return true; // Allow empty email
+        if (!val || val === "") return true;
         const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
         const validTLDs = [
           ".com",
@@ -80,7 +80,6 @@ const updateParticipantSchema = z.object({
 
         if (!emailRegex.test(val)) return false;
 
-        // Check if email ends with valid TLD
         return validTLDs.some((tld) => val.toLowerCase().endsWith(tld));
       },
       {
@@ -95,7 +94,12 @@ export default function AdminPage() {
   const [openImportModal, setOpenImportModal] = useState(false);
   const [openAddPesertaModal, setOpenAddPesertaModal] = useState(false);
   const [openUpdatePesertaModal, setOpenUpdatePesertaModal] = useState(false);
+  const [openApprovalDialog, setOpenApprovalDialog] = useState(false);
+  const [openApprovedDialog, setOpenApprovedDialog] = useState(false);
+  const [openNotAttendDialog, setOpenNotAttendDialog] = useState(false);
   const [selectedParticipant, setSelectedParticipant] =
+    useState<PresentDto | null>(null);
+  const [selectedParticipantForApproval, setSelectedParticipantForApproval] =
     useState<PresentDto | null>(null);
   const [eventID, setEventID] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<EventDto | null>(null);
@@ -103,7 +107,6 @@ export default function AdminPage() {
   const { toast } = useToast();
   const { triggerDataUpdate } = useQuerySync();
 
-  // Use React Query for events data
   const { data: eventsData = [] } = useFindEvent();
 
   const addPesertaForm = useForm<z.infer<typeof addParticipantSchema>>({
@@ -129,7 +132,6 @@ export default function AdminPage() {
     },
   });
 
-  // Define columns inside the component so handleApprove is accessible
   const columns: ColumnDef<PresentDto>[] = [
     {
       id: "no",
@@ -238,30 +240,61 @@ export default function AdminPage() {
       cell: ({ row }) => {
         const present = row.original;
 
-        // If status is 1 (approved), show only "Approved" text
         if (present.status === 1) {
           return (
             <div className="flex justify-center">
-              <span className="px-3 py-2 bg-green-500 text-white rounded-full text-xs font-medium">
+              <Button
+                size="sm"
+                className="w-20 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full text-xs font-medium"
+                onClick={() => handleApprovedClick(present)}
+              >
                 Approved
-              </span>
+              </Button>
             </div>
           );
         }
 
-        // If status is 0 (not approved), show action buttons
+        if (present.status === -1) {
+          return (
+            <div className="flex gap-2 justify-center">
+              <Button
+                size="sm"
+                className="w-20 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-medium"
+                onClick={() => handleNotAttendClick(present)}
+              >
+                Not Attend
+              </Button>
+              <Button
+                size="sm"
+                className="w-20 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white"
+                onClick={() => handleUpdateClick(present)}
+              >
+                Update
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="w-20 rounded-2xl"
+                onClick={() => console.log("Delete present:", present)}
+              >
+                Delete
+              </Button>
+            </div>
+          );
+        }
+
         return (
           <div className="flex gap-2 justify-center">
             <Button
               size="sm"
-              className="rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-white"
+              className="w-20 rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-white"
               onClick={() => handleApprove(present)}
             >
               Approve
             </Button>
             <Button
               size="sm"
-              className="rounded-2xl bg-blue-500 hover:bg-blue-400 text-white"
+              className="w-20 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white"
               onClick={() => handleUpdateClick(present)}
             >
               Update
@@ -269,7 +302,7 @@ export default function AdminPage() {
             <Button
               size="sm"
               variant="destructive"
-              className="rounded-2xl"
+              className="w-20 rounded-2xl"
               onClick={() => console.log("Delete present:", present)}
             >
               Delete
@@ -279,22 +312,6 @@ export default function AdminPage() {
       },
     },
   ];
-
-  // Remove manual API call since we're using React Query
-  // useEffect(() => {
-  //   const GET_ALL_EVENTS = async () => {
-  //     try {
-  //       const response = await API.EVENTS.GET_ALL();
-  //       if (response.success && response.data) {
-  //         setEventsData(response.data);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error get all events:", error);
-  //     }
-  //   };
-
-  //   GET_ALL_EVENTS();
-  // }, []);
 
   useEffect(() => {
     if (eventID && eventsData.length > 0) {
@@ -419,27 +436,49 @@ export default function AdminPage() {
     }
   };
 
-  const handleApprove = async (present: PresentDto) => {
+  const handleApprove = (present: PresentDto) => {
+    setSelectedParticipantForApproval(present);
+    setOpenApprovalDialog(true);
+  };
+
+  const handleApprovedClick = (present: PresentDto) => {
+    setSelectedParticipantForApproval(present);
+    setOpenApprovedDialog(true);
+  };
+
+  const handleNotAttendClick = (present: PresentDto) => {
+    setSelectedParticipantForApproval(present);
+    setOpenNotAttendDialog(true);
+  };
+
+  const handleConfirmApprove = async () => {
+    if (!selectedParticipantForApproval) return;
+
     try {
-      console.log("Approving participant:", present);
-      console.log("Present ID:", present.id);
+      console.log("Approving participant:", selectedParticipantForApproval);
+      console.log("Present ID:", selectedParticipantForApproval.id);
       console.log(
         "API call URL:",
-        `${CONFIG.BASE_URL}${CONFIG.API_VERSION}/presents/${present.id}`
+        `${CONFIG.BASE_URL}${CONFIG.API_VERSION}/presents/${selectedParticipantForApproval.id}`
       );
 
-      // Update status from 0 to 1 (approved)
-      const response = await API.PRESENTS.UPDATE(present.id, {
-        status: 1, // Change from 0 to 1 (approved)
-      });
+      const response = await API.PRESENTS.UPDATE(
+        selectedParticipantForApproval.id,
+        {
+          status: 1,
+        }
+      );
 
       if (response.success) {
         toast({
           title: "Participant Approved",
-          description: `${present.name} has been approved successfully`,
+          description: `${selectedParticipantForApproval.name} has been approved successfully`,
         });
 
-        // Fetch updated data from the server
+        setOpenApprovalDialog(false);
+        setOpenNotAttendDialog(false);
+        setSelectedParticipantForApproval(null);
+
         if (selectedEvent) {
           try {
             const updatedEventResponse = await API.EVENTS.GET_BY_ID(
@@ -453,7 +492,6 @@ export default function AdminPage() {
             }
           } catch (fetchError) {
             console.error("Error fetching updated data:", fetchError);
-            // Fallback to triggerDataUpdate if direct fetch fails
             await triggerDataUpdate({
               eventId: eventID,
               type: "all",
@@ -479,6 +517,199 @@ export default function AdminPage() {
 
       toast({
         title: "Approval Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelApproved = async () => {
+    if (!selectedParticipantForApproval) return;
+
+    try {
+      const response = await API.PRESENTS.UPDATE(
+        selectedParticipantForApproval.id,
+        {
+          status: 0,
+        }
+      );
+
+      if (response.success) {
+        toast({
+          title: "Approval Cancelled",
+          description: `${selectedParticipantForApproval.name}'s approval has been cancelled`,
+        });
+
+        setOpenApprovedDialog(false);
+        setSelectedParticipantForApproval(null);
+
+        if (selectedEvent) {
+          try {
+            const updatedEventResponse = await API.EVENTS.GET_BY_ID(
+              selectedEvent.id
+            );
+            if (
+              updatedEventResponse.success &&
+              updatedEventResponse.data?.Present
+            ) {
+              setAttendeesData(updatedEventResponse.data.Present);
+            }
+          } catch (fetchError) {
+            console.error("Error fetching updated data:", fetchError);
+            await triggerDataUpdate({
+              eventId: eventID,
+              type: "all",
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error cancelling approval:", error);
+
+      let errorMessage = "An error occurred while cancelling the approval";
+
+      if (error && typeof error === "object" && "response" in error) {
+        const apiError = error as {
+          response?: { data?: { message?: string }; status?: number };
+          message?: string;
+        };
+        errorMessage =
+          apiError.response?.data?.message || apiError.message || errorMessage;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: "Cancel Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleNotAttend = async () => {
+    if (!selectedParticipantForApproval) return;
+
+    try {
+      const response = await API.PRESENTS.UPDATE(
+        selectedParticipantForApproval.id,
+        {
+          status: -1,
+        }
+      );
+
+      if (response.success) {
+        toast({
+          title: "Status Updated",
+          description: `${selectedParticipantForApproval.name} marked as not attending`,
+        });
+
+        setOpenApprovalDialog(false);
+        setOpenApprovedDialog(false);
+        setSelectedParticipantForApproval(null);
+
+        if (selectedEvent) {
+          try {
+            const updatedEventResponse = await API.EVENTS.GET_BY_ID(
+              selectedEvent.id
+            );
+            if (
+              updatedEventResponse.success &&
+              updatedEventResponse.data?.Present
+            ) {
+              setAttendeesData(updatedEventResponse.data.Present);
+            }
+          } catch (fetchError) {
+            console.error("Error fetching updated data:", fetchError);
+            await triggerDataUpdate({
+              eventId: eventID,
+              type: "all",
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+
+      let errorMessage = "An error occurred while updating the status";
+
+      if (error && typeof error === "object" && "response" in error) {
+        const apiError = error as {
+          response?: { data?: { message?: string }; status?: number };
+          message?: string;
+        };
+        errorMessage =
+          apiError.response?.data?.message || apiError.message || errorMessage;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: "Update Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelNotAttend = async () => {
+    if (!selectedParticipantForApproval) return;
+
+    try {
+      const response = await API.PRESENTS.UPDATE(
+        selectedParticipantForApproval.id,
+        {
+          status: 0,
+        }
+      );
+
+      if (response.success) {
+        toast({
+          title: "Status Updated",
+          description: `${selectedParticipantForApproval.name}'s status changed back to pending approval`,
+        });
+
+        setOpenNotAttendDialog(false);
+        setSelectedParticipantForApproval(null);
+
+        if (selectedEvent) {
+          try {
+            const updatedEventResponse = await API.EVENTS.GET_BY_ID(
+              selectedEvent.id
+            );
+            if (
+              updatedEventResponse.success &&
+              updatedEventResponse.data?.Present
+            ) {
+              setAttendeesData(updatedEventResponse.data.Present);
+            }
+          } catch (fetchError) {
+            console.error("Error fetching updated data:", fetchError);
+            await triggerDataUpdate({
+              eventId: eventID,
+              type: "all",
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+
+      let errorMessage = "An error occurred while updating the status";
+
+      if (error && typeof error === "object" && "response" in error) {
+        const apiError = error as {
+          response?: { data?: { message?: string }; status?: number };
+          message?: string;
+        };
+        errorMessage =
+          apiError.response?.data?.message || apiError.message || errorMessage;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: "Update Failed",
         description: errorMessage,
         variant: "destructive",
       });
@@ -513,19 +744,16 @@ export default function AdminPage() {
           description: `${data.name} has been updated successfully`,
         });
 
-        // Update local data
         setAttendeesData((prevData) =>
           prevData.map((item) =>
             item.id === selectedParticipant.id ? { ...item, ...data } : item
           )
         );
 
-        // Close modal and reset form
         setOpenUpdatePesertaModal(false);
         updatePesertaForm.reset();
         setSelectedParticipant(null);
 
-        // Fetch updated data from the server
         if (selectedEvent) {
           try {
             const updatedEventResponse = await API.EVENTS.GET_BY_ID(
@@ -539,7 +767,6 @@ export default function AdminPage() {
             }
           } catch (fetchError) {
             console.error("Error fetching updated data:", fetchError);
-            // Fallback to triggerDataUpdate if direct fetch fails
             await triggerDataUpdate({
               eventId: eventID,
               type: "all",
@@ -562,7 +789,6 @@ export default function AdminPage() {
       } else if (error instanceof Error) {
         errorMessage = error.message;
 
-        // Check if it's an email validation error
         if (
           errorMessage.toLowerCase().includes("email") ||
           errorMessage.toLowerCase().includes("invalid email")
@@ -828,7 +1054,6 @@ export default function AdminPage() {
           </Dialog>
         </div>
 
-        {/* Update Participant Dialog */}
         <Dialog
           open={openUpdatePesertaModal}
           onOpenChange={setOpenUpdatePesertaModal}
@@ -910,6 +1135,205 @@ export default function AdminPage() {
                 </div>
               </form>
             </Form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={openApprovalDialog} onOpenChange={setOpenApprovalDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Approve Participant</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {selectedParticipantForApproval && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Invoice
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedParticipantForApproval.invoice || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Name
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedParticipantForApproval.name}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Email
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedParticipantForApproval.email || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Phone Number
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedParticipantForApproval.no_telp || "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => handleConfirmApprove()}
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                >
+                  Approve
+                </Button>
+                <Button
+                  onClick={() => handleNotAttend()}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Not Attend
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={openApprovedDialog} onOpenChange={setOpenApprovedDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Manage Approved Participant</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {selectedParticipantForApproval && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Invoice
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedParticipantForApproval.invoice || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Name
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedParticipantForApproval.name}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Email
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedParticipantForApproval.email || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Phone Number
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedParticipantForApproval.no_telp || "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => handleCancelApproved()}
+                  variant="destructive"
+                  className="flex-1"
+                >
+                  Cancel Approved
+                </Button>
+                <Button
+                  onClick={() => handleNotAttend()}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Not Attend
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={openNotAttendDialog}
+          onOpenChange={setOpenNotAttendDialog}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Manage Not Attend Participant</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {selectedParticipantForApproval && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Invoice
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedParticipantForApproval.invoice || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Name
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedParticipantForApproval.name}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Email
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedParticipantForApproval.email || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Phone Number
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedParticipantForApproval.no_telp || "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => handleConfirmApprove()}
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                >
+                  Approved
+                </Button>
+                <Button
+                  onClick={() => handleCancelNotAttend()}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel Not Attend
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
 
