@@ -53,9 +53,50 @@ const addParticipantSchema = z.object({
   event_id: z.number(),
 });
 
+const updateParticipantSchema = z.object({
+  invoice: z.string().optional(),
+  name: z.string().min(1, "Name is required"),
+  email: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine(
+      (val) => {
+        if (!val || val === "") return true; // Allow empty email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+        const validTLDs = [
+          ".com",
+          ".org",
+          ".net",
+          ".id",
+          ".co.id",
+          ".edu",
+          ".gov",
+          ".mil",
+          ".int",
+          ".info",
+          ".biz",
+        ];
+
+        if (!emailRegex.test(val)) return false;
+
+        // Check if email ends with valid TLD
+        return validTLDs.some((tld) => val.toLowerCase().endsWith(tld));
+      },
+      {
+        message:
+          "Invalid email format. Please use valid TLD formats such as: .com, .org, .net, .id, .co.id",
+      }
+    ),
+  no_telp: z.string().optional(),
+});
+
 export default function AdminPage() {
   const [openImportModal, setOpenImportModal] = useState(false);
   const [openAddPesertaModal, setOpenAddPesertaModal] = useState(false);
+  const [openUpdatePesertaModal, setOpenUpdatePesertaModal] = useState(false);
+  const [selectedParticipant, setSelectedParticipant] =
+    useState<PresentDto | null>(null);
   const [eventID, setEventID] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<EventDto | null>(null);
   const [attendeesData, setAttendeesData] = useState<PresentDto[]>([]);
@@ -75,6 +116,16 @@ export default function AdminPage() {
       status: 0,
       profit_center_id: 1,
       event_id: 0,
+    },
+  });
+
+  const updatePesertaForm = useForm<z.infer<typeof updateParticipantSchema>>({
+    resolver: zodResolver(updateParticipantSchema),
+    defaultValues: {
+      invoice: "",
+      name: "",
+      email: "",
+      no_telp: "",
     },
   });
 
@@ -191,7 +242,7 @@ export default function AdminPage() {
         if (present.status === 1) {
           return (
             <div className="flex justify-center">
-              <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+              <span className="px-3 py-2 bg-green-500 text-white rounded-full text-xs font-medium">
                 Approved
               </span>
             </div>
@@ -211,7 +262,7 @@ export default function AdminPage() {
             <Button
               size="sm"
               className="rounded-2xl bg-blue-500 hover:bg-blue-400 text-white"
-              onClick={() => console.log("Update present:", present)}
+              onClick={() => handleUpdateClick(present)}
             >
               Update
             </Button>
@@ -434,6 +485,101 @@ export default function AdminPage() {
     }
   };
 
+  const handleUpdateClick = (present: PresentDto) => {
+    setSelectedParticipant(present);
+    updatePesertaForm.setValue("invoice", present.invoice || "");
+    updatePesertaForm.setValue("name", present.name);
+    updatePesertaForm.setValue("email", present.email || "");
+    updatePesertaForm.setValue("no_telp", present.no_telp || "");
+    setOpenUpdatePesertaModal(true);
+  };
+
+  const onSubmitUpdateParticipant = async (
+    data: z.infer<typeof updateParticipantSchema>
+  ) => {
+    if (!selectedParticipant) return;
+
+    try {
+      const response = await API.PRESENTS.UPDATE(selectedParticipant.id, {
+        invoice: data.invoice,
+        name: data.name,
+        email: data.email,
+        no_telp: data.no_telp,
+      });
+
+      if (response.success) {
+        toast({
+          title: "Participant Updated",
+          description: `${data.name} has been updated successfully`,
+        });
+
+        // Update local data
+        setAttendeesData((prevData) =>
+          prevData.map((item) =>
+            item.id === selectedParticipant.id ? { ...item, ...data } : item
+          )
+        );
+
+        // Close modal and reset form
+        setOpenUpdatePesertaModal(false);
+        updatePesertaForm.reset();
+        setSelectedParticipant(null);
+
+        // Fetch updated data from the server
+        if (selectedEvent) {
+          try {
+            const updatedEventResponse = await API.EVENTS.GET_BY_ID(
+              selectedEvent.id
+            );
+            if (
+              updatedEventResponse.success &&
+              updatedEventResponse.data?.Present
+            ) {
+              setAttendeesData(updatedEventResponse.data.Present);
+            }
+          } catch (fetchError) {
+            console.error("Error fetching updated data:", fetchError);
+            // Fallback to triggerDataUpdate if direct fetch fails
+            await triggerDataUpdate({
+              eventId: eventID,
+              type: "all",
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error updating participant:", error);
+
+      let errorMessage = "An error occurred while updating the participant";
+
+      if (error && typeof error === "object" && "response" in error) {
+        const apiError = error as {
+          response?: { data?: { message?: string }; status?: number };
+          message?: string;
+        };
+        errorMessage =
+          apiError.response?.data?.message || apiError.message || errorMessage;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+
+        // Check if it's an email validation error
+        if (
+          errorMessage.toLowerCase().includes("email") ||
+          errorMessage.toLowerCase().includes("invalid email")
+        ) {
+          errorMessage =
+            "Invalid email format. Please use valid TLD formats such as: .com, .org, .net, .id, .co.id";
+        }
+      }
+
+      toast({
+        title: "Update Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
   const onSubmitAddParticipant = async (
     data: z.infer<typeof addParticipantSchema>
   ) => {
@@ -512,35 +658,13 @@ export default function AdminPage() {
               email: "Email",
               no_telp: "Phone Number",
             }}
-            disabled={!selectedEvent}
-            onClick={() => {
-              if (!selectedEvent) {
-                toast({
-                  title: "You must select event",
-                  variant: "destructive",
-                });
-              }
-            }}
           />
           <ModalForm
             open={openImportModal}
             setOpen={setOpenImportModal}
             title={"Import Seminar Data"}
             triggerText={
-              <Button
-                variant="outline"
-                disabled={!selectedEvent}
-                onClick={() => {
-                  if (!selectedEvent) {
-                    toast({
-                      title: "You must select event",
-                      variant: "destructive",
-                    });
-                  } else {
-                    setOpenImportModal(true);
-                  }
-                }}
-              >
+              <Button variant="outline">
                 <Upload className="mr-2 h-4 w-4" />
                 Import Data
               </Button>
@@ -703,6 +827,91 @@ export default function AdminPage() {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Update Participant Dialog */}
+        <Dialog
+          open={openUpdatePesertaModal}
+          onOpenChange={setOpenUpdatePesertaModal}
+        >
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Update Participant Data</DialogTitle>
+            </DialogHeader>
+            <Form {...updatePesertaForm}>
+              <form
+                onSubmit={updatePesertaForm.handleSubmit(
+                  onSubmitUpdateParticipant
+                )}
+                className="space-y-4"
+              >
+                <FormField
+                  control={updatePesertaForm.control}
+                  name="invoice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Invoice</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter invoice" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={updatePesertaForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={updatePesertaForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="Enter email"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={updatePesertaForm.control}
+                  name="no_telp"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter phone number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end pt-4">
+                  <Button
+                    type="submit"
+                    className="bg-black hover:bg-gray-800 text-white"
+                  >
+                    Update
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
 
         <DataTable columns={columns} data={attendeesData} />
       </CardContent>
