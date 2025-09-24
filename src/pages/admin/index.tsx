@@ -29,6 +29,7 @@ import { SearchableEventSelect } from "../../components/searchable-event-select.
 import { useToast } from "../../hooks/use-toast.ts";
 import { CaretSortIcon } from "@radix-ui/react-icons";
 import ExcelExportXLSX from "./components/export-excel-xlsx.tsx";
+import ExcelExportCSV from "./components/export-excel-csv.tsx";
 import { ModalForm } from "../../components/modal-form.tsx";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -254,73 +255,90 @@ export default function AdminPage() {
     }
   }, [selectedEvent, addPesertaForm]);
 
-  const handleExportCSV = () => {
-    if (attendeesData.length === 0) {
-      toast({
-        title: "No Data Available",
-        description: "No participant data available for export",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Remove the old handleExportCSV function since we're now using the component
+  // const handleExportCSV = () => {
+  //   if (!selectedEvent) {
+  //     toast({
+  //       title: "You must select event",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
+  //
+  //   if (attendeesData.length === 0) {
+  //     toast({
+  //       title: "No Data Available",
+  //       description: "No participant data available for export",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
 
-    const exportData = attendeesData.map((item, index) => ({
-      no: index + 1,
-      invoice: item.invoice || "",
-      name: item.name,
-      email: item.email || "",
-      no_telp: item.no_telp || "",
-      attendance: item.status === 1 ? "Present" : "Absent",
-    }));
+  //   const exportData = attendeesData.map((item, index) => ({
+  //     no: index + 1,
+  //     invoice: item.invoice || "",
+  //     name: item.name,
+  //     email: item.email || "",
+  //     no_telp: item.no_telp || "",
+  //     attendance: item.status === 1 ? "Present" : "Absent",
+  //   }));
 
-    const headers = {
-      no: "No",
-      invoice: "Invoice",
-      name: "Name",
-      email: "Email",
-      no_telp: "Phone Number",
-      attendance: "Attendance",
-    };
+  //   const headers = {
+  //     no: "No",
+  //     invoice: "Invoice",
+  //     name: "Name",
+  //     email: "Email",
+  //     no_telp: "Phone Number",
+  //     attendance: "Attendance",
+  //   };
 
-    const csvHeaders = Object.values(headers).join(",");
-    const csvRows = exportData.map((row) =>
-      Object.keys(headers)
-        .map((key) => {
-          const value = row[key as keyof typeof row];
-          if (typeof value === "string" && value.includes(",")) {
-            return `"${value}"`;
-          }
-          return value;
-        })
-        .join(",")
-    );
+  //   const csvHeaders = Object.values(headers).join(",");
+  //   const csvRows = exportData.map((row) =>
+  //     Object.keys(headers)
+  //       .map((key) => {
+  //         const value = row[key as keyof typeof row];
+  //         if (typeof value === "string" && value.includes(",")) {
+  //           return `"${value}"`;
+  //         }
+  //         return value;
+  //       })
+  //       .join(",")
+  //   );
 
-    const csvContent = [csvHeaders, ...csvRows].join("\n");
+  //   const csvContent = [csvHeaders, ...csvRows].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = window.URL.createObjectURL(blob);
+  //   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  //   const link = document.createElement("a");
+  //   const url = window.URL.createObjectURL(blob);
 
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `Data Peserta ${
-        selectedEvent?.event || "Seminar"
-      } ${new Date().getFullYear()}.csv`
-    );
+  //   link.setAttribute("href", url);
+  //   link.setAttribute(
+  //     "download",
+  //     `Data Peserta ${
+  //       selectedEvent?.event || "Seminar"
+  //     } ${new Date().getFullYear()}.csv`
+  //   );
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
+  //   window.URL.revokeObjectURL(url);
 
-    toast({
-      title: "Export Successful",
-      description: "Participant data has been successfully exported to CSV format",
-    });
-  };
+  //   toast({
+  //     title: "Export Successful",
+  //     description: "Participant data has been successfully exported to CSV format",
+  //   });
+  // };
 
   const handleExportExcel = () => {
+    if (!selectedEvent) {
+      toast({
+        title: "You must select event",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (attendeesData.length === 0) {
       toast({
         title: "No Data Available",
@@ -333,10 +351,10 @@ export default function AdminPage() {
     const exportData = attendeesData.map((item, index) => ({
       no: index + 1,
       invoice: item.invoice || "",
-      name: item.name,
+      nama: item.name,
       email: item.email || "",
-      no_telp: item.no_telp || "",
-      attendance: item.status === 1 ? "Present" : "Absent",
+      telp: item.no_telp || "",
+      attendance: item.status === 1 ? "Hadir" : "Tidak Hadir",
     }));
 
     const ExcelExportComponent = (
@@ -349,9 +367,9 @@ export default function AdminPage() {
         customHeaders={{
           no: "No",
           invoice: "Invoice",
-          name: "Name",
+          nama: "Nama",
           email: "Email",
-          no_telp: "Phone Number",
+          telp: "Tlp",
           attendance: "Attendance",
         }}
       />
@@ -495,13 +513,35 @@ export default function AdminPage() {
               email: "Email",
               no_telp: "Phone Number",
             }}
+            disabled={!selectedEvent}
+            onClick={() => {
+              if (!selectedEvent) {
+                toast({
+                  title: "You must select event",
+                  variant: "destructive",
+                });
+              }
+            }}
           />
           <ModalForm
             open={openImportModal}
             setOpen={setOpenImportModal}
             title={"Import Seminar Data"}
             triggerText={
-              <Button variant="outline">
+              <Button
+                variant="outline"
+                disabled={!selectedEvent}
+                onClick={() => {
+                  if (!selectedEvent) {
+                    toast({
+                      title: "You must select event",
+                      variant: "destructive",
+                    });
+                  } else {
+                    setOpenImportModal(true);
+                  }
+                }}
+              >
                 <Upload className="mr-2 h-4 w-4" />
                 Import Data
               </Button>
@@ -510,14 +550,45 @@ export default function AdminPage() {
             <FormImportData />
           </ModalForm>
 
-          <Button variant="outline" onClick={handleExportExcel}>
+          <Button
+            variant="outline"
+            onClick={handleExportExcel}
+            disabled={!selectedEvent}
+          >
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Export Excel
           </Button>
-          <Button variant="outline" onClick={handleExportCSV}>
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
-            Export CSV
-          </Button>
+          <ExcelExportCSV
+            data={attendeesData.map((item, index) => ({
+              no: index + 1,
+              invoice: item.invoice || "",
+              nama: item.name,
+              email: item.email || "",
+              telp: item.no_telp || "",
+              attendance: item.status === 1 ? "Hadir" : "Tidak Hadir",
+            }))}
+            filename={`Data Peserta ${
+              selectedEvent?.event || "Seminar"
+            } ${new Date().getFullYear()}.csv`}
+            text="Export CSV"
+            customHeaders={{
+              no: "No",
+              invoice: "Invoice",
+              nama: "Nama",
+              email: "Email",
+              telp: "Tlp",
+              attendance: "Attendance",
+            }}
+            disabled={!selectedEvent}
+            onClick={() => {
+              if (!selectedEvent) {
+                toast({
+                  title: "You must select event",
+                  variant: "destructive",
+                });
+              }
+            }}
+          />
           <Button variant="default" onClick={handleSyncDatabase}>
             <Database className="mr-2 h-4 w-4" />
             Sync Database
