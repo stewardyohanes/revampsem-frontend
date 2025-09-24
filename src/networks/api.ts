@@ -198,7 +198,7 @@ const API = {
       data: UpdateUserDto
     ): Promise<ApiResponseDto<UserDto>> => {
       try {
-        const response = await axios.put(
+        const response = await axios.patch(
           `${CONFIG.ENDPOINTS.USERS.BASE}/${id}`,
           data
         );
@@ -305,7 +305,7 @@ const API = {
       data: Partial<CreateEventDto>
     ): Promise<ApiResponseDto<EventDto>> => {
       try {
-        const response = await axios.put(
+        const response = await axios.patch(
           `${CONFIG.ENDPOINTS.EVENTS.BASE}/${id}`,
           data
         );
@@ -414,7 +414,7 @@ const API = {
       data: UpdatePresentDto
     ): Promise<ApiResponseDto<PresentDto>> => {
       try {
-        const response = await axios.put(
+        const response = await axios.patch(
           `${CONFIG.ENDPOINTS.PRESENTS.BASE}/${id}`,
           data
         );
