@@ -110,7 +110,7 @@ export default function AdminPage() {
 
   const { data: eventsData = [] } = useFindEvent();
 
-  const addPesertaForm = useForm<z.infer<typeof addParticipantSchema>>({
+  const addParticipantForm = useForm<z.infer<typeof addParticipantSchema>>({
     resolver: zodResolver(addParticipantSchema),
     defaultValues: {
       invoice: "",
@@ -319,25 +319,50 @@ export default function AdminPage() {
       const selectedEventData = eventsData.find(
         (event) => event.id.toString() === eventID
       );
+      
+      // DEBUG: Log data yang diterima dari backend
+      console.log('=== DEBUG FRONTEND DATA ===');
+      console.log('Selected Event ID:', eventID);
+      console.log('Selected Event Data:', selectedEventData);
+      
       if (selectedEventData && selectedEventData.Present) {
+        console.log('Present Array:', selectedEventData.Present);
+        console.log('Present Array Length:', selectedEventData.Present.length);
+        
+        // Debug setiap item dalam Present array
+        selectedEventData.Present.forEach((present, index) => {
+          console.log(`Present ${index + 1}:`, {
+            id: present.id,
+            name: present.name,
+            email: present.email,
+            no_telp: present.no_telp,
+            no_telp_type: typeof present.no_telp,
+            no_telp_length: present.no_telp ? present.no_telp.length : 0,
+            invoice: present.invoice,
+            status: present.status
+          });
+        });
+        
         setAttendeesData(selectedEventData.Present);
       } else {
+        console.log('No Present data found');
         setAttendeesData([]);
       }
     } else {
+      console.log('No eventID or eventsData');
       setAttendeesData([]);
     }
   }, [eventID, eventsData]);
 
   useEffect(() => {
     if (selectedEvent) {
-      addPesertaForm.setValue("event_id", selectedEvent.id);
-      addPesertaForm.setValue(
+      addParticipantForm.setValue("event_id", selectedEvent.id);
+      addParticipantForm.setValue(
         "profit_center_id",
         selectedEvent.profit_center_id || 1
       );
     }
-  }, [selectedEvent, addPesertaForm]);
+  }, [selectedEvent, addParticipantForm]);
 
   const handleExportExcel = () => {
     if (!selectedEvent) {
@@ -827,7 +852,7 @@ export default function AdminPage() {
       );
 
       if (response.success) {
-        addPesertaForm.reset();
+        addParticipantForm.reset();
         setOpenAddPesertaModal(false);
 
         toast({
@@ -1035,6 +1060,7 @@ export default function AdminPage() {
               <Button
                 variant="default"
                 className="bg-black hover:bg-gray-800 text-white"
+                disabled={!selectedEvent}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Participant
@@ -1044,13 +1070,15 @@ export default function AdminPage() {
               <DialogHeader>
                 <DialogTitle>Add Participant Data</DialogTitle>
               </DialogHeader>
-              <Form {...addPesertaForm}>
+              <Form {...addParticipantForm}>
                 <form
-                  onSubmit={addPesertaForm.handleSubmit(onSubmitAddParticipant)}
+                  onSubmit={addParticipantForm.handleSubmit(
+                    onSubmitAddParticipant
+                  )}
                   className="space-y-4"
                 >
                   <FormField
-                    control={addPesertaForm.control}
+                    control={addParticipantForm.control}
                     name="invoice"
                     render={({ field }) => (
                       <FormItem>
@@ -1063,7 +1091,7 @@ export default function AdminPage() {
                     )}
                   />
                   <FormField
-                    control={addPesertaForm.control}
+                    control={addParticipantForm.control}
                     name="name"
                     render={({ field }) => (
                       <FormItem>
@@ -1076,7 +1104,7 @@ export default function AdminPage() {
                     )}
                   />
                   <FormField
-                    control={addPesertaForm.control}
+                    control={addParticipantForm.control}
                     name="email"
                     render={({ field }) => (
                       <FormItem>
@@ -1093,7 +1121,7 @@ export default function AdminPage() {
                     )}
                   />
                   <FormField
-                    control={addPesertaForm.control}
+                    control={addParticipantForm.control}
                     name="no_telp"
                     render={({ field }) => (
                       <FormItem>

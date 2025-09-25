@@ -29,6 +29,10 @@ import { EventDto } from "../../../services/event/dtos";
 import { EventApiService } from "../../../services/event/api.ts";
 import { useToast } from "../../../hooks/use-toast.ts";
 import { useQuerySync } from "../../../hooks/use-query-sync.ts";
+import {
+  processExcelFile,
+  createCleanedExcelFile,
+} from "../../../utils/excel-processor.ts";
 
 export default function FormImportData() {
   const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +67,7 @@ export default function FormImportData() {
       if (!data.event_id) {
         toast({
           title: "Error",
-          description: "Silakan pilih event atau buat event baru",
+          description: "Please select an event or create a new event",
           variant: "destructive",
         });
         return;
@@ -72,16 +76,67 @@ export default function FormImportData() {
       if (!data.file) {
         toast({
           title: "Error",
-          description: "Silakan pilih file untuk diupload",
+          description: "Please select a file to upload",
           variant: "destructive",
         });
         return;
       }
 
+      // Preprocess Excel file untuk membersihkan spasi berlebih
+      let processedFile = data.file;
+
+      if (data.file.name.endsWith(".xlsx") || data.file.name.endsWith(".xls")) {
+        try {
+          toast({
+            title: "Processing",
+            description: "Cleaning Excel data...",
+          });
+
+          const processingResult = await processExcelFile(data.file);
+
+          if (processingResult.errors.length > 0) {
+            console.warn("Excel processing warnings:", processingResult.errors);
+          }
+
+          if (processingResult.data.length === 0) {
+            toast({
+              title: "Error",
+              description: "No valid data found in Excel file",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          // Buat file Excel baru dengan data yang sudah dibersihkan
+          const cleanedFileName = `cleaned_${data.file.name}`;
+          processedFile = createCleanedExcelFile(
+            processingResult.data,
+            cleanedFileName
+          );
+
+          toast({
+            title: "Success",
+            description: `Processed ${processingResult.processedRows} rows from ${processingResult.totalRows} total rows`,
+          });
+        } catch (processingError) {
+          console.error("Error processing Excel file:", processingError);
+          toast({
+            title: "Warning",
+            description:
+              "Could not preprocess Excel file, uploading original file",
+            variant: "destructive",
+          });
+          // Tetap lanjutkan dengan file asli jika preprocessing gagal
+        }
+      }
+
       const eventId = parseInt(data.event_id);
 
       if (eventId !== 0) {
-        await eventApiService.insertAttendance(eventId.toString(), data.file);
+        await eventApiService.insertAttendance(
+          eventId.toString(),
+          processedFile
+        );
 
         // Trigger real-time data update
         await triggerDataUpdate({
@@ -90,8 +145,8 @@ export default function FormImportData() {
         });
 
         toast({
-          title: "Berhasil",
-          description: "Attendance berhasil diupload ke event yang sudah ada",
+          title: "Success",
+          description: "Attendance successfully uploaded to existing event",
         });
 
         formAttendance.reset();
@@ -106,7 +161,7 @@ export default function FormImportData() {
         ) {
           toast({
             title: "Error",
-            description: "Data event tidak lengkap untuk membuat event baru",
+            description: "Event data is incomplete to create a new event",
             variant: "destructive",
           });
           return;
@@ -122,7 +177,7 @@ export default function FormImportData() {
         if (newEvent && newEvent.id) {
           await eventApiService.insertAttendance(
             newEvent.id.toString(),
-            data.file
+            processedFile
           );
         }
 
@@ -133,9 +188,9 @@ export default function FormImportData() {
         });
 
         toast({
-          title: "Berhasil",
+          title: "Success",
           description:
-            "Event baru berhasil dibuat dan attendance berhasil diupload",
+            "New event successfully created and attendance successfully uploaded",
         });
 
         formAttendance.reset();
@@ -145,7 +200,7 @@ export default function FormImportData() {
       console.error("Error processing attendance:", error);
       toast({
         title: "Error",
-        description: "Terjadi kesalahan saat memproses attendance",
+        description: "An error occurred while processing attendance",
         variant: "destructive",
       });
     } finally {
