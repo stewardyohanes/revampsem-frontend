@@ -22,6 +22,13 @@ import {
   FormMessage,
 } from "../../components/ui/form.tsx";
 import { Input } from "../../components/ui/input.tsx";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select.tsx";
 import { DataTable } from "../../components/data-table.tsx";
 import { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
@@ -105,6 +112,7 @@ export default function AdminPage() {
   const [eventID, setEventID] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<EventDto | null>(null);
   const [attendeesData, setAttendeesData] = useState<PresentDto[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const { toast } = useToast();
   const { triggerDataUpdate } = useQuerySync();
 
@@ -319,16 +327,16 @@ export default function AdminPage() {
       const selectedEventData = eventsData.find(
         (event) => event.id.toString() === eventID
       );
-      
+
       // DEBUG: Log data yang diterima dari backend
-      console.log('=== DEBUG FRONTEND DATA ===');
-      console.log('Selected Event ID:', eventID);
-      console.log('Selected Event Data:', selectedEventData);
-      
+      console.log("=== DEBUG FRONTEND DATA ===");
+      console.log("Selected Event ID:", eventID);
+      console.log("Selected Event Data:", selectedEventData);
+
       if (selectedEventData && selectedEventData.Present) {
-        console.log('Present Array:', selectedEventData.Present);
-        console.log('Present Array Length:', selectedEventData.Present.length);
-        
+        console.log("Present Array:", selectedEventData.Present);
+        console.log("Present Array Length:", selectedEventData.Present.length);
+
         // Debug setiap item dalam Present array
         selectedEventData.Present.forEach((present, index) => {
           console.log(`Present ${index + 1}:`, {
@@ -339,17 +347,17 @@ export default function AdminPage() {
             no_telp_type: typeof present.no_telp,
             no_telp_length: present.no_telp ? present.no_telp.length : 0,
             invoice: present.invoice,
-            status: present.status
+            status: present.status,
           });
         });
-        
+
         setAttendeesData(selectedEventData.Present);
       } else {
-        console.log('No Present data found');
+        console.log("No Present data found");
         setAttendeesData([]);
       }
     } else {
-      console.log('No eventID or eventsData');
+      console.log("No eventID or eventsData");
       setAttendeesData([]);
     }
   }, [eventID, eventsData]);
@@ -363,6 +371,15 @@ export default function AdminPage() {
       );
     }
   }, [selectedEvent, addParticipantForm]);
+
+  // Filter attendees data based on status filter
+  const filteredAttendeesData = attendeesData.filter((attendee) => {
+    if (statusFilter === "all") return true;
+    if (statusFilter === "pending") return attendee.status === 0;
+    if (statusFilter === "approved") return attendee.status === 1;
+    if (statusFilter === "not_attend") return attendee.status === -1;
+    return true;
+  });
 
   const handleExportExcel = () => {
     if (!selectedEvent) {
@@ -1051,6 +1068,17 @@ export default function AdminPage() {
                 setSelectedEvent(event);
               }}
             />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending Approval</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="not_attend">Not Attend</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Dialog
             open={openAddPesertaModal}
@@ -1503,7 +1531,7 @@ export default function AdminPage() {
           </DialogContent>
         </Dialog>
 
-        <DataTable columns={columns} data={attendeesData} />
+        <DataTable columns={columns} data={filteredAttendeesData} />
       </CardContent>
     </Card>
   );
