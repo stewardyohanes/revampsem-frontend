@@ -35,12 +35,9 @@ export const removeUserData = (): void => {
 };
 
 export const clearAuthData = (): void => {
-  // Hapus token dan user data secara spesifik
   removeAuthToken();
   removeUserData();
 
-  // Hapus semua data localStorage yang terkait dengan autentikasi
-  // untuk memastikan tidak ada data sensitif yang tertinggal
   const keysToRemove = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -55,6 +52,5 @@ export const clearAuthData = (): void => {
     }
   }
 
-  // Hapus semua key yang teridentifikasi
   keysToRemove.forEach((key) => localStorage.removeItem(key));
 };

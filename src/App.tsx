@@ -29,12 +29,17 @@ function App() {
       </Route>
       <Route element={<PrivateRoute />}>
         <Route path="/" element={<RootLayout />}>
-          {isAuth?.user?.profit_center_id === null ||
-          isAuth?.user?.profit_center_id === 0 ? (
+          {isAuth?.user?.level === 0 ? (
             <Route index element={<SuperAdminPage />} />
           ) : (
             <Route index element={<AdminPage />} />
           )}
+        </Route>
+        <Route path="/admin" element={<RootLayout />}>
+          <Route index element={<AdminPage />} />
+        </Route>
+        <Route path="/superadmin" element={<RootLayout />}>
+          <Route index element={<SuperAdminPage />} />
         </Route>
       </Route>
     </Routes>

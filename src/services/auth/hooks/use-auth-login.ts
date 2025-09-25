@@ -39,7 +39,7 @@ export const useAuthLogin = (): UseMutationResult<
         display_name: userData.display_name,
         password: "",
         profit_center_id: userData.profit_center_id || 0,
-        level: 0,
+        level: userData.level,
         reset_password: userData.reset_password || false,
         token,
         created_at: userData.created_at,
@@ -47,13 +47,12 @@ export const useAuthLogin = (): UseMutationResult<
       };
     },
     onSuccess: async (userEntity) => {
-      // Token sudah disimpan di API layer, jadi tidak perlu duplikasi
-      // Simpan user data ke localStorage
       setUserData({
         id: userEntity.id,
         username: userEntity.username,
         display_name: userEntity.display_name,
         profit_center_id: userEntity.profit_center_id,
+        level: userEntity.level,
         reset_password: userEntity.reset_password,
         created_at: userEntity.created_at,
         updated_at: userEntity.updated_at,
@@ -63,14 +62,15 @@ export const useAuthLogin = (): UseMutationResult<
         title: "Login berhasil",
         description: "Anda berhasil masuk ke sistem",
       });
-      
+
       // Wait for query invalidation to complete before allowing redirect
       await queryClient.invalidateQueries({ queryKey: ["isAuth"] });
     },
     onError: (error) => {
-      const message = error instanceof AxiosError 
-        ? error.response?.data.message 
-        : error.message;
+      const message =
+        error instanceof AxiosError
+          ? error.response?.data.message
+          : error.message;
 
       toast({
         title: "Login gagal",

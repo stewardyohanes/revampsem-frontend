@@ -4,7 +4,7 @@ export interface UserDto {
   username: string;
   display_name: string;
   profit_center_id?: number;
-  level?: number;
+  level: number;
   reset_password?: boolean;
   created_at: string;
   updated_at: string;
@@ -43,6 +43,5 @@ export interface LogActivityDto {
   User?: UserDto;
 }
 
-// Legacy types for backward compatibility
 export type CreateUserDTO = CreateUserDto;
 export type UpdateUserDTO = UpdateUserDto;

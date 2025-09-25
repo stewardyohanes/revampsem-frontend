@@ -1025,7 +1025,7 @@ export default function AdminPage() {
               }
             }}
           />
-          <Button variant="default" onClick={handleSyncDatabase}>
+          <Button variant="default" disabled onClick={handleSyncDatabase}>
             <Database className="mr-2 h-4 w-4" />
             Sync Database
           </Button>

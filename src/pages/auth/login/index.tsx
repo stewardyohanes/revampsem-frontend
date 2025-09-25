@@ -37,11 +37,20 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await login.mutateAsync(data);
-      // Token is automatically stored in useAuthLogin hook
-      // Refetch auth status to ensure state is updated
       await refetchAuth();
-      // Navigate after auth state is confirmed
-      navigate("/", { replace: true });
+
+      setTimeout(() => {
+        const userData = JSON.parse(localStorage.getItem("user_data") || "{}");
+        const userLevel = userData?.level;
+
+        if (userLevel === 0) {
+          navigate("/superadmin", { replace: true });
+        } else if (userLevel === 1) {
+          navigate("/admin", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
+      }, 100);
     } finally {
       setIsLoading(false);
     }
@@ -154,4 +163,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
