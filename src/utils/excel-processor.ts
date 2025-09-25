@@ -37,6 +37,30 @@ export const normalizePhoneNumber = (
   return phone;
 };
 
+export const normalizeNameWithSpaces = (name: string): string => {
+  if (name.includes(" ")) {
+    return name;
+  }
+
+  const separateCapitalizedWords = (text: string): string => {
+    return text.replace(/([a-z])([A-Z])/g, "$1 $2");
+  };
+
+  const specialCases: { [key: string]: string } = {
+    petrushandika: "Petrus Handika",
+    johndoe: "John Doe",
+  };
+
+  const lowerName = name.toLowerCase();
+  if (specialCases[lowerName]) {
+    return specialCases[lowerName];
+  }
+
+  const separated = separateCapitalizedWords(name);
+
+  return separated.replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 export const cleanExcelData = (
   data: Record<string, string | number | null>[]
 ): CleanedExcelData[] => {
@@ -149,6 +173,16 @@ export const processExcelFile = async (
 
               if (standardKey === "telp") {
                 rowData[standardKey] = normalizePhoneNumber(cellValue);
+              } else if (standardKey === "nama") {
+                if (typeof cellValue === "string") {
+                  const cleanedName = cleanString(cellValue);
+                  rowData[standardKey] = normalizeNameWithSpaces(cleanedName);
+                } else if (cellValue !== null && cellValue !== undefined) {
+                  const cleanedName = cleanString(String(cellValue));
+                  rowData[standardKey] = normalizeNameWithSpaces(cleanedName);
+                } else {
+                  rowData[standardKey] = null;
+                }
               } else if (typeof cellValue === "string") {
                 rowData[standardKey] = cleanString(cellValue);
               } else if (typeof cellValue === "number") {

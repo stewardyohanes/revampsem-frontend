@@ -44,7 +44,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import FormImportData from "./components/form-import-data.tsx";
 import API from "../../networks/api.ts";
-import CONFIG from "../../configs/config.ts";
 import { EventDto, PresentDto } from "../../services/event/dtos";
 import { useEffect } from "react";
 import { useFindEvent } from "../../services/event/hooks/use-find-event.ts";
@@ -328,16 +327,7 @@ export default function AdminPage() {
         (event) => event.id.toString() === eventID
       );
 
-      // DEBUG: Log data yang diterima dari backend
-      console.log("=== DEBUG FRONTEND DATA ===");
-      console.log("Selected Event ID:", eventID);
-      console.log("Selected Event Data:", selectedEventData);
-
       if (selectedEventData && selectedEventData.Present) {
-        console.log("Present Array:", selectedEventData.Present);
-        console.log("Present Array Length:", selectedEventData.Present.length);
-
-        // Debug setiap item dalam Present array
         selectedEventData.Present.forEach((present, index) => {
           console.log(`Present ${index + 1}:`, {
             id: present.id,
@@ -353,11 +343,9 @@ export default function AdminPage() {
 
         setAttendeesData(selectedEventData.Present);
       } else {
-        console.log("No Present data found");
         setAttendeesData([]);
       }
     } else {
-      console.log("No eventID or eventsData");
       setAttendeesData([]);
     }
   }, [eventID, eventsData]);
@@ -372,7 +360,6 @@ export default function AdminPage() {
     }
   }, [selectedEvent, addParticipantForm]);
 
-  // Filter attendees data based on status filter
   const filteredAttendeesData = attendeesData.filter((attendee) => {
     if (statusFilter === "all") return true;
     if (statusFilter === "pending") return attendee.status === 0;
@@ -503,13 +490,6 @@ export default function AdminPage() {
     if (!selectedParticipantForApproval) return;
 
     try {
-      console.log("Approving participant:", selectedParticipantForApproval);
-      console.log("Present ID:", selectedParticipantForApproval.id);
-      console.log(
-        "API call URL:",
-        `${CONFIG.BASE_URL}${CONFIG.API_VERSION}/presents/${selectedParticipantForApproval.id}`
-      );
-
       const response = await API.PRESENTS.UPDATE(
         selectedParticipantForApproval.id,
         {
