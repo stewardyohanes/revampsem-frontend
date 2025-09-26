@@ -28,11 +28,15 @@ import { useState } from "react";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[] | undefined;
+  title?: string;
+  onToggle?: () => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  title,
+  onToggle,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -62,13 +66,18 @@ export function DataTable<TData, TValue>({
 
   return (
     <div>
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-4 gap-4">
         <Input
           placeholder="Search all columns..."
           value={globalFilter ?? ""}
           onChange={(event) => setGlobalFilter(String(event.target.value))}
           className="max-w-sm"
         />
+        {title && onToggle && (
+          <Button onClick={onToggle} variant="outline">
+            {title}
+          </Button>
+        )}
       </div>
       <div className="rounded-md border">
         <Table>

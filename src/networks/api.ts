@@ -164,7 +164,6 @@ const API = {
     GET_ALL: async (): Promise<ApiResponseDto<UserDto[]>> => {
       try {
         const response = await axios.get(CONFIG.ENDPOINTS.USERS.BASE);
-        console.log("Get All User", response);
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -205,7 +204,6 @@ const API = {
       data: UpdateUserDto
     ): Promise<ApiResponseDto<UserDto>> => {
       try {
-        console.log("Update User", id, data);
         const response = await axios.patch(
           `${CONFIG.ENDPOINTS.USERS.BASE}/${id}`,
           data
@@ -235,7 +233,7 @@ const API = {
 
     GET_LOGS: async (): Promise<ApiResponseDto<LogActivityDto[]>> => {
       try {
-        const response = await axios.get(CONFIG.ENDPOINTS.USERS.LOGS);
+        const response = await axios.get(CONFIG.ENDPOINTS.LOGS.BASE);
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error)) {

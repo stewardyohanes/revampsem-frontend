@@ -6,7 +6,12 @@ import { Card, CardContent } from "../../components/ui/card";
 import { DataTable } from "../../components/data-table";
 import { useFindUsers } from "../../services/users/hooks/use-find-users";
 import { useFindProfitCenters } from "../../services/users/hooks/use-find-profit-centers";
-import { UserDto, ProfitCenterDto } from "../../services/users/dtos";
+import { useFindLogs } from "../../services/users/hooks/use-find-logs";
+import {
+  UserDto,
+  ProfitCenterDto,
+  LogActivityDto,
+} from "../../services/users/dtos";
 import { ModalForm } from "../../components/modal-form";
 import { FormCreateUser } from "./components/form-create-user";
 import { useState, useMemo } from "react";
@@ -24,9 +29,11 @@ export default function SuperAdminPage() {
   const [openUpdate, setOpenUpdate] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserDto | null>(null);
+  const [showLogActivity, setShowLogActivity] = useState(false);
 
   const { data: users, isLoading, error, isError } = useFindUsers();
   const { data: profitCenters } = useFindProfitCenters();
+  const { data: logs, isLoading: isLoadingLogs } = useFindLogs();
   const deleteUser = useDeleteUser();
 
   const profitCenterMap = useMemo(() => {
@@ -71,7 +78,7 @@ export default function SuperAdminPage() {
           </Button>
         );
       },
-      cell: ({ row }) => <div className="">{row.index + 1}</div>,
+      cell: ({ row }) => <div className="text-center">{row.index + 1}</div>,
     },
     {
       accessorKey: "username",
@@ -87,7 +94,7 @@ export default function SuperAdminPage() {
         );
       },
       cell: ({ row }) => (
-        <div className="lowercase">{row.getValue("username")}</div>
+        <div className="lowercase text-center">{row.getValue("username")}</div>
       ),
     },
     {
@@ -103,7 +110,9 @@ export default function SuperAdminPage() {
           </Button>
         );
       },
-      cell: ({ row }) => <div>{row.getValue("display_name")}</div>,
+      cell: ({ row }) => (
+        <div className="text-center">{row.getValue("display_name")}</div>
+      ),
     },
     {
       accessorKey: "profit_center",
@@ -127,11 +136,19 @@ export default function SuperAdminPage() {
             )
               .filter(Boolean)
               .join(", ");
-            return <div>{profitCenterNames || "No Profit Center"}</div>;
+            return (
+              <div className="text-center">
+                {profitCenterNames || "No Profit Center"}
+              </div>
+            );
           }
 
           if (user.ProfitCenter.profit_center) {
-            return <div>{user.ProfitCenter.profit_center}</div>;
+            return (
+              <div className="text-center">
+                {user.ProfitCenter.profit_center}
+              </div>
+            );
           }
         }
 
@@ -140,10 +157,10 @@ export default function SuperAdminPage() {
           profitCenterMap.has(user.profit_center_id)
         ) {
           const profitCenterName = profitCenterMap.get(user.profit_center_id);
-          return <div>{profitCenterName}</div>;
+          return <div className="text-center">{profitCenterName}</div>;
         }
 
-        return <div>No Profit Center</div>;
+        return <div className="text-center">No Profit Center</div>;
       },
     },
     {
@@ -169,6 +186,90 @@ export default function SuperAdminPage() {
             >
               Delete
             </Button>
+          </div>
+        );
+      },
+    },
+  ];
+
+  const logColumns: ColumnDef<LogActivityDto>[] = [
+    {
+      accessorKey: "id",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            No
+            <CaretSortIcon />
+          </Button>
+        );
+      },
+      cell: ({ row }) => <div className="text-center">{row.index + 1}</div>,
+    },
+    {
+      accessorKey: "timestamp",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Timestamp
+            <CaretSortIcon />
+          </Button>
+        );
+      },
+      cell: ({ row }) => {
+        const log = row.original;
+        return (
+          <div className="text-center">
+            {log.formattedDate || new Date(log.timestamp).toLocaleString()}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "username",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Username
+            <CaretSortIcon />
+          </Button>
+        );
+      },
+      cell: ({ row }) => {
+        const log = row.original;
+        return (
+          <div className="lowercase text-center">
+            {log.user || log.username}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "action",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Action
+            <CaretSortIcon />
+          </Button>
+        );
+      },
+      cell: ({ row }) => {
+        const log = row.original;
+        return (
+          <div className="text-sm text-center">
+            {log.action || log.actionDetail}
           </div>
         );
       },
@@ -203,10 +304,19 @@ export default function SuperAdminPage() {
                 </div>
               </div>
 
-              {isLoading && <div>Loading users...</div>}
+              {(isLoading || isLoadingLogs) && <div>Loading...</div>}
               {isError && <div>Error loading users: {error?.message}</div>}
-              {!isLoading && !isError && (
-                <DataTable columns={columns} data={users || []} />
+              {!isLoading && !isError && !isLoadingLogs && (
+                <DataTable
+                  columns={
+                    (showLogActivity ? logColumns : columns) as ColumnDef<
+                      UserDto | LogActivityDto
+                    >[]
+                  }
+                  data={showLogActivity ? logs || [] : users || []}
+                  title={showLogActivity ? "User" : "Log Activity"}
+                  onToggle={() => setShowLogActivity(!showLogActivity)}
+                />
               )}
             </div>
           </div>

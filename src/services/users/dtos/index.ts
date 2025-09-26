@@ -36,12 +36,21 @@ export interface ProfitCenterDto {
 }
 
 export interface LogActivityDto {
-  id: number;
-  user_id: number;
-  activity: string;
-  description?: string;
-  created_at: string;
-  User?: UserDto;
+  id: string;
+  timestamp: string;
+  userId: number;
+  username: string;
+  actionType: string;
+  actionDetail: string;
+  ipAddress: string;
+  userAgent: string;
+  additionalData?: {
+    targetUsername?: string;
+    [key: string]: string | number | boolean | null | undefined;
+  };
+  formattedDate: string;
+  action: string;
+  user: string;
 }
 
 export type CreateUserDTO = CreateUserDto;

@@ -66,7 +66,6 @@ export const useUpdateUser = (id: number) => {
         description: "User has been updated successfully",
       });
 
-      // Invalidate and refetch users queries
       await queryClient.invalidateQueries({
         queryKey: queryKeyFactory.all(),
       });
@@ -75,13 +74,11 @@ export const useUpdateUser = (id: number) => {
         queryKey: queryKeyFactory.pagination(),
       });
 
-      // Also invalidate profit centers queries to refresh the mapping
       const profitCenterQueryKey = new QueryKeyFactory("profit-centers");
       await queryClient.invalidateQueries({
         queryKey: profitCenterQueryKey.pagination(),
       });
 
-      // Force refetch to ensure immediate update
       await queryClient.refetchQueries({
         queryKey: queryKeyFactory.pagination(),
       });

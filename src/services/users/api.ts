@@ -6,6 +6,7 @@ import {
   CreateUserDto,
   UpdateUserDto,
   ProfitCenterDto,
+  LogActivityDto,
 } from "./dtos";
 import { ApiResponseDto } from "../../types/dto";
 
@@ -86,7 +87,6 @@ export class UserApiService {
     }
 
     const response = await API.USERS.UPDATE(id, updateData);
-    console.log("Update Users 2", response);
     return response;
   }
 
@@ -97,6 +97,25 @@ export class UserApiService {
   async getProfitCenters(): Promise<ProfitCenterDto[]> {
     try {
       const response = await API.USERS.GET_PROFIT_CENTERS();
+
+      if (Array.isArray(response)) {
+        return response;
+      }
+
+      if (response && response.data && Array.isArray(response.data)) {
+        return response.data;
+      }
+
+      return [];
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
+
+  async getLogs(): Promise<LogActivityDto[]> {
+    try {
+      const response = await API.USERS.GET_LOGS();
 
       if (Array.isArray(response)) {
         return response;
