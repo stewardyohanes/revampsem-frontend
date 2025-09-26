@@ -5,10 +5,11 @@ import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
 import { DataTable } from "../../components/data-table";
 import { useFindUsers } from "../../services/users/hooks/use-find-users";
-import { UserDto } from "../../services/users/dtos";
+import { useFindProfitCenters } from "../../services/users/hooks/use-find-profit-centers";
+import { UserDto, ProfitCenterDto } from "../../services/users/dtos";
 import { ModalForm } from "../../components/modal-form";
 import { FormCreateUser } from "./components/form-create-user";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { FormEditUser } from "./components/form-edit-user";
 import { useDeleteUser } from "../../services/users/hooks/use-delete-user";
 import {
@@ -25,7 +26,18 @@ export default function SuperAdminPage() {
   const [selectedUser, setSelectedUser] = useState<UserDto | null>(null);
 
   const { data: users, isLoading, error, isError } = useFindUsers();
+  const { data: profitCenters } = useFindProfitCenters();
   const deleteUser = useDeleteUser();
+
+  const profitCenterMap = useMemo(() => {
+    if (!profitCenters) return new Map<number, string>();
+
+    const map = new Map<number, string>();
+    profitCenters.forEach((pc: ProfitCenterDto) => {
+      map.set(pc.id, pc.profit_center);
+    });
+    return map;
+  }, [profitCenters]);
 
   const handleUpdateClick = (user: UserDto) => {
     setSelectedUser(user);
@@ -92,6 +104,47 @@ export default function SuperAdminPage() {
         );
       },
       cell: ({ row }) => <div>{row.getValue("display_name")}</div>,
+    },
+    {
+      accessorKey: "profit_center",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Profit Center
+            <CaretSortIcon />
+          </Button>
+        );
+      },
+      cell: ({ row }) => {
+        const user = row.original;
+        if (user.ProfitCenter) {
+          if (Array.isArray(user.ProfitCenter)) {
+            const profitCenterNames = user.ProfitCenter.map(
+              (pc) => pc.profit_center
+            )
+              .filter(Boolean)
+              .join(", ");
+            return <div>{profitCenterNames || "No Profit Center"}</div>;
+          }
+
+          if (user.ProfitCenter.profit_center) {
+            return <div>{user.ProfitCenter.profit_center}</div>;
+          }
+        }
+
+        if (
+          user.profit_center_id &&
+          profitCenterMap.has(user.profit_center_id)
+        ) {
+          const profitCenterName = profitCenterMap.get(user.profit_center_id);
+          return <div>{profitCenterName}</div>;
+        }
+
+        return <div>No Profit Center</div>;
+      },
     },
     {
       accessorKey: "actions",
