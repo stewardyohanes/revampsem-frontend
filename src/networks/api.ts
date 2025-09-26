@@ -22,6 +22,12 @@ import {
 } from "../services/users/dtos";
 
 import {
+  LogDto,
+  LogSummaryDto,
+  LogQueryParamsDto,
+} from "../services/logs/dtos";
+
+import {
   EventDto,
   CreateEventDto,
   UploadAttendanceDto,
@@ -242,6 +248,58 @@ const API = {
     > => {
       try {
         const response = await axios.get(CONFIG.ENDPOINTS.USERS.PROFIT_CENTERS);
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          throw handleApiError(error);
+        }
+        throw error;
+      }
+    },
+  },
+
+  LOGS: {
+    GET_ALL: async (
+      params?: LogQueryParamsDto
+    ): Promise<ApiResponseDto<LogDto[]>> => {
+      try {
+        const response = await axios.get(CONFIG.ENDPOINTS.LOGS.BASE, {
+          params,
+        });
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          throw handleApiError(error);
+        }
+        throw error;
+      }
+    },
+
+    GET_BY_USER_ID: async (
+      userId: number,
+      params?: LogQueryParamsDto
+    ): Promise<ApiResponseDto<LogDto[]>> => {
+      try {
+        const response = await axios.get(
+          `${CONFIG.ENDPOINTS.LOGS.BY_USER}/${userId}`,
+          { params }
+        );
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          throw handleApiError(error);
+        }
+        throw error;
+      }
+    },
+
+    GET_SUMMARY: async (
+      params?: LogQueryParamsDto
+    ): Promise<ApiResponseDto<LogSummaryDto>> => {
+      try {
+        const response = await axios.get(CONFIG.ENDPOINTS.LOGS.SUMMARY, {
+          params,
+        });
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -478,6 +536,9 @@ export type {
   UpdateUserDto,
   ProfitCenterDto,
   LogActivityDto,
+  LogDto,
+  LogSummaryDto,
+  LogQueryParamsDto,
   EventDto,
   CreateEventDto,
   UploadAttendanceDto,

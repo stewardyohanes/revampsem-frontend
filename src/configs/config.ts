@@ -23,6 +23,11 @@ const CONFIG = {
     SYNC: {
       SYNC_ALL: "/sync/all",
     },
+    LOGS: {
+      BASE: "/logs",
+      BY_USER: "/logs/user",
+      SUMMARY: "/logs/summary",
+    },
   },
 
   // Request timeout

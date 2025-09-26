@@ -21,11 +21,11 @@ export const useCreateUser = () => {
         id: user.id,
         username: user.username,
         display_name: user.display_name,
-        password: "", // Not returned from API for security
+        password: "",
         profit_center_id: user.profit_center_id || 0,
-        level: 0, // Default value
+        level: user.level || 0,
         reset_password: user.reset_password || false,
-        token: "", // Not returned from create API
+        token: "",
         created_at: user.created_at,
         updated_at: user.updated_at,
       };
