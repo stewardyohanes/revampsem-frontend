@@ -328,19 +328,6 @@ export default function AdminPage() {
       );
 
       if (selectedEventData && selectedEventData.Present) {
-        selectedEventData.Present.forEach((present, index) => {
-          console.log(`Present ${index + 1}:`, {
-            id: present.id,
-            name: present.name,
-            email: present.email,
-            no_telp: present.no_telp,
-            no_telp_type: typeof present.no_telp,
-            no_telp_length: present.no_telp ? present.no_telp.length : 0,
-            invoice: present.invoice,
-            status: present.status,
-          });
-        });
-
         setAttendeesData(selectedEventData.Present);
       } else {
         setAttendeesData([]);

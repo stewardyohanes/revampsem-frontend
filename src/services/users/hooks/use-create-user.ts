@@ -37,7 +37,6 @@ export const useCreateUser = () => {
         description: "User has been created successfully",
       });
 
-      // Invalidate and refetch all users queries using proper query key factory
       await queryClient.invalidateQueries({
         queryKey: queryKeyFactory.all(),
         exact: false,
@@ -48,7 +47,6 @@ export const useCreateUser = () => {
         exact: false,
       });
 
-      // Also invalidate pagination queries specifically
       await queryClient.invalidateQueries({
         queryKey: queryKeyFactory.pagination(),
         exact: false,

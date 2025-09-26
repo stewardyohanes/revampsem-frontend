@@ -34,18 +34,40 @@ export class UserApiService {
   }
 
   async createUser(dto: CreateUserDTO): Promise<UserDto | undefined> {
-    const createData: CreateUserDto = {
-      username: dto.username,
-      display_name: dto.display_name,
-      password: dto.password,
-      password_confirmation: dto.password_confirmation,
-      profit_center_id: dto.profit_center_id,
-      level: dto.level || 1,
-    };
+    try {
+      const createData: CreateUserDto = {
+        username: dto.username,
+        display_name: dto.display_name,
+        password: dto.password,
+        password_confirmation: dto.password_confirmation,
+        profit_center_id: dto.profit_center_id,
+        level: dto.level || 1,
+      };
 
-    const response = await API.USERS.CREATE(createData);
-    console.log("Create Users", response);
-    return response.data;
+      const response = await API.USERS.CREATE(createData);
+
+      if (
+        response &&
+        response.message &&
+        response.message.includes("successfully")
+      ) {
+        return {
+          id: Date.now(),
+          username: dto.username,
+          display_name: dto.display_name,
+          profit_center_id: dto.profit_center_id,
+          level: dto.level || 1,
+          reset_password: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      }
+
+      return undefined;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 
   async updateUser(
@@ -70,7 +92,6 @@ export class UserApiService {
   async getProfitCenters(): Promise<ProfitCenterDto[]> {
     try {
       const response = await API.USERS.GET_PROFIT_CENTERS();
-      console.log("Profit Centers", response);
 
       if (Array.isArray(response)) {
         return response;

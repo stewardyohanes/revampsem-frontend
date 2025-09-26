@@ -19,6 +19,23 @@ export const useUpdateUser = (id: number) => {
         throw new Error("No response received from server");
       }
 
+      if (response.message && response.message.includes("successfully")) {
+        const userEntity: UserEntity = {
+          id: id,
+          username: dto.username ?? "",
+          display_name: dto.display_name ?? "",
+          password: "",
+          profit_center_id: 0,
+          level: 0,
+          reset_password: false,
+          token: "",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        return userEntity;
+      }
+
       if (response.success === false) {
         throw new Error(response.message || "User update failed");
       }
