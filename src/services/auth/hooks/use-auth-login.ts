@@ -39,7 +39,7 @@ export const useAuthLogin = (): UseMutationResult<
         display_name: userData.display_name,
         password: "",
         profit_center_id: userData.profit_center_id || 0,
-        level: userData.level,
+        level: userData.level || 0,
         reset_password: userData.reset_password || false,
         token,
         created_at: userData.created_at,

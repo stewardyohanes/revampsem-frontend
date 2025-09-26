@@ -2,42 +2,48 @@ import { CaretSortIcon, PlusCircledIcon } from "@radix-ui/react-icons";
 import { ColumnDef } from "@tanstack/react-table";
 
 import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Card, CardContent } from "../../components/ui/card.tsx";
-import { DataTable } from "../../components/data-table.tsx";
-import { useFindUsers } from "../../services/users/hooks/use-find-users.ts";
+import { Card, CardContent } from "../../components/ui/card";
+import { DataTable } from "../../components/data-table";
+import { useFindUsers } from "../../services/users/hooks/use-find-users";
 import { UserDto } from "../../services/users/dtos";
-import { ModalForm } from "../../components/modal-form.tsx";
-import { FormCreateUser } from "./components/form-create-user.tsx";
+import { ModalForm } from "../../components/modal-form";
+import { FormCreateUser } from "./components/form-create-user";
 import { useState } from "react";
-import { FormEditUser } from "./components/form-edit-user.tsx";
-import { KeyRound, Pencil, Trash2 } from "lucide-react";
+import { FormEditUser } from "./components/form-edit-user";
+import { useDeleteUser } from "../../services/users/hooks/use-delete-user";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../../components/ui/tooltip.tsx";
-import { useDeleteUser } from "../../services/users/hooks/use-delete-user.ts";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../../components/ui/alert-dialog.tsx";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
 
 export default function SuperAdminPage() {
   const [openCreate, setOpenCreate] = useState(false);
   const [openUpdate, setOpenUpdate] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserDto | null>(null);
 
-  const { data } = useFindUsers();
+  const { data: users, isLoading, error, isError } = useFindUsers();
   const deleteUser = useDeleteUser();
+
+  const handleUpdateClick = (user: UserDto) => {
+    setSelectedUser(user);
+    setOpenUpdate(true);
+  };
+
+  const handleDeleteClick = (user: UserDto) => {
+    setSelectedUser(user);
+    setOpenDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedUser) {
+      await deleteUser.mutateAsync(selectedUser.id);
+      setOpenDeleteDialog(false);
+      setSelectedUser(null);
+    }
+  };
 
   const columns: ColumnDef<UserDto>[] = [
     {
@@ -88,145 +94,142 @@ export default function SuperAdminPage() {
       cell: ({ row }) => <div>{row.getValue("display_name")}</div>,
     },
     {
-      accessorKey: "reset_password",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Reset Password
-            <CaretSortIcon />
-          </Button>
-        );
-      },
-      cell: ({ row }) => (
-        <Badge variant="secondary" className="bg-zinc-100">
-          {row.getValue("reset_password") ? "Yes Request" : "No Request"}
-        </Badge>
-      ),
-    },
-    {
-      id: "actions",
+      accessorKey: "actions",
+      header: "Actions",
       cell: ({ row }) => {
         const user = row.original;
 
         return (
-          <TooltipProvider>
-            <div className="flex items-center gap-1">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <KeyRound className="h-4 w-4" />
-                    <span className="sr-only">Reset Password</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Reset Password</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <ModalForm
-                    open={openUpdate}
-                    setOpen={setOpenUpdate}
-                    title={"Edit User"}
-                    triggerText={
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSelectedUser(user)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    }
-                  >
-                    {selectedUser && (
-                      <FormEditUser
-                        setOpen={setOpenUpdate}
-                        userId={selectedUser.id}
-                        user={selectedUser}
-                      />
-                    )}
-                  </ModalForm>
-                </TooltipTrigger>
-                <TooltipContent>Edit User</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete User</span>
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Are you absolutely sure?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete the account and remove
-                          the data from our servers.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-red-500 hover:bg-red-700 hover:text-white"
-                          onClick={async () => {
-                            await deleteUser.mutateAsync(user.id);
-                          }}
-                        >
-                          Continue
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </TooltipTrigger>
-                <TooltipContent>Delete User</TooltipContent>
-              </Tooltip>
-            </div>
-          </TooltipProvider>
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              size="sm"
+              className="w-20 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white"
+              onClick={() => handleUpdateClick(user)}
+            >
+              Update
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="w-20 rounded-2xl"
+              onClick={() => handleDeleteClick(user)}
+            >
+              Delete
+            </Button>
+          </div>
         );
       },
     },
   ];
 
   return (
-    <Card>
-      <CardContent>
-        <div className="w-full">
-          <div className="flex flex-col gap-4 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ModalForm
-                  open={openCreate}
-                  setOpen={setOpenCreate}
-                  title={"Create User"}
-                  triggerText={
-                    <Button>
-                      <PlusCircledIcon className="mr-2 h-4 w-4" />
-                      Add User
-                    </Button>
-                  }
-                >
-                  <FormCreateUser setOpen={setOpenCreate} />
-                </ModalForm>
-                <Button variant="secondary">
-                  <PlusCircledIcon className="mr-2 h-4 w-4" />
-                  Setup Google Form
-                </Button>
+    <>
+      <Card>
+        <CardContent>
+          <div className="w-full">
+            <div className="flex flex-col gap-4 p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ModalForm
+                    open={openCreate}
+                    setOpen={setOpenCreate}
+                    title={"Create User"}
+                    triggerText={
+                      <Button>
+                        <PlusCircledIcon className="mr-2 h-4 w-4" />
+                        Add User
+                      </Button>
+                    }
+                  >
+                    <FormCreateUser setOpen={setOpenCreate} />
+                  </ModalForm>
+                  <Button variant="secondary">
+                    <PlusCircledIcon className="mr-2 h-4 w-4" />
+                    Setup Google Form
+                  </Button>
+                </div>
               </div>
-            </div>
 
-            <DataTable columns={columns} data={data || []} />
+              {isLoading && <div>Loading users...</div>}
+              {isError && <div>Error loading users: {error?.message}</div>}
+              {!isLoading && !isError && (
+                <DataTable columns={columns} data={users || []} />
+              )}
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Delete Dialog */}
+      <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Confirm Delete</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedUser && (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  Are you sure you want to delete this user? This action cannot
+                  be undone.
+                </p>
+                <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Username
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedUser.username}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        Display Name
+                      </label>
+                      <p className="text-sm font-semibold">
+                        {selectedUser.display_name}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={() => setOpenDeleteDialog(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => handleConfirmDelete()}
+                variant="destructive"
+                className="flex-1"
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Modal */}
+      <ModalForm
+        open={openUpdate}
+        setOpen={setOpenUpdate}
+        title={"Edit User"}
+        triggerText={null}
+      >
+        {selectedUser && (
+          <FormEditUser
+            setOpen={setOpenUpdate}
+            userId={selectedUser.id}
+            user={selectedUser}
+          />
+        )}
+      </ModalForm>
+    </>
   );
 }

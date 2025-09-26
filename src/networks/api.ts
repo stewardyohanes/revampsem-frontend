@@ -163,10 +163,21 @@ const API = {
   USERS: {
     GET_ALL: async (): Promise<ApiResponseDto<UserDto[]>> => {
       try {
+        console.log("API.USERS.GET_ALL: Making request to", CONFIG.ENDPOINTS.USERS.BASE);
         const response = await axios.get(CONFIG.ENDPOINTS.USERS.BASE);
+        console.log("API.USERS.GET_ALL: Axios response:", response);
+        console.log("API.USERS.GET_ALL: Response data:", response.data);
+        console.log("API.USERS.GET_ALL: Response status:", response.status);
         return response.data;
       } catch (error) {
+        console.error("API.USERS.GET_ALL: Error occurred:", error);
         if (axios.isAxiosError(error)) {
+          console.error("API.USERS.GET_ALL: Axios error details:", {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            message: error.message
+          });
           throw handleApiError(error);
         }
         throw error;

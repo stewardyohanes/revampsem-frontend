@@ -1,14 +1,15 @@
 import { UserApiService } from "../api.ts";
 import { useToast } from "../../../hooks/use-toast.ts";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { UserEntity } from "../entities/UserEntity.ts";
 import { CreateUserDTO } from "../dtos";
-import { AxiosError } from "axios";
+import { UserEntity } from "../entities/UserEntity.ts";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { QueryKeyFactory } from "../../shared/query-key.factory.ts";
 
 export const useCreateUser = () => {
   const api = new UserApiService();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const queryKeyFactory = new QueryKeyFactory("users");
 
   return useMutation<UserEntity, Error, CreateUserDTO>({
     mutationFn: async (dto: CreateUserDTO) => {
@@ -36,20 +37,34 @@ export const useCreateUser = () => {
         title: "User created",
         description: "User has been created successfully",
       });
-      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      
+      // Invalidate and refetch all users queries using proper query key factory
+      await queryClient.invalidateQueries({
+        queryKey: queryKeyFactory.all(),
+        exact: false,
+      });
+      
+      await queryClient.refetchQueries({
+        queryKey: queryKeyFactory.all(),
+        exact: false,
+      });
+      
+      // Also invalidate pagination queries specifically
+      await queryClient.invalidateQueries({
+        queryKey: queryKeyFactory.pagination(),
+        exact: false,
+      });
+      
+      await queryClient.refetchQueries({
+        queryKey: queryKeyFactory.pagination(),
+        exact: false,
+      });
     },
     onError: (error) => {
-      if (error instanceof AxiosError) {
-        toast({
-          title: "User creation failed",
-          description: error.response?.data.message,
-        });
-      } else {
-        toast({
-          title: "User creation failed",
-          description: error.message,
-        });
-      }
+      toast({
+        title: "User creation failed",
+        description: error.message,
+      });
     },
   });
 };

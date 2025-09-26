@@ -1,17 +1,31 @@
 import API from "../../networks/api.ts";
-import { 
-  CreateUserDTO, 
+import {
+  CreateUserDTO,
   UpdateUserDTO,
-  UserDto, 
-  CreateUserDto, 
-  UpdateUserDto, 
-  ProfitCenterDto
+  UserDto,
+  CreateUserDto,
+  UpdateUserDto,
+  ProfitCenterDto,
 } from "./dtos";
+import { ApiResponseDto } from "../../types/dto";
 
 export class UserApiService {
   async getUsers(): Promise<UserDto[]> {
-    const response = await API.USERS.GET_ALL();
-    return response.data || [];
+    try {
+      const response = await API.USERS.GET_ALL();
+      if (Array.isArray(response)) {
+        return response;
+      }
+
+      if (response && response.data && Array.isArray(response.data)) {
+        return response.data;
+      }
+
+      return [];
+    } catch (error) {
+      console.error("UserApiService - Error in getUsers:", error);
+      return [];
+    }
   }
 
   async getUser(id: number): Promise<UserDto | undefined> {
@@ -27,7 +41,7 @@ export class UserApiService {
       password_confirmation: dto.password_confirmation,
       profit_center_id: dto.profit_center_id,
     };
-    
+
     const response = await API.USERS.CREATE(createData);
     return response.data;
   }
@@ -35,15 +49,16 @@ export class UserApiService {
   async updateUser(
     id: number,
     dto: UpdateUserDTO
-  ): Promise<UserDto | undefined> {
+  ): Promise<ApiResponseDto<UserDto>> {
     const updateData: UpdateUserDto = {
       username: dto.username,
       display_name: dto.display_name,
       password: dto.password,
+      password_confirmation: dto.password_confirmation,
     };
-    
+
     const response = await API.USERS.UPDATE(id, updateData);
-    return response.data;
+    return response;
   }
 
   async deleteUser(id: number): Promise<void> {

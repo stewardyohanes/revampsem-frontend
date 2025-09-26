@@ -23,6 +23,7 @@ export interface UpdateUserDto {
   username?: string;
   display_name?: string;
   password?: string;
+  password_confirmation?: string;
   profit_center_id?: number;
 }
 
