@@ -8,6 +8,13 @@ import {
   FormMessage,
 } from "../../../components/ui/form.tsx";
 import { Input } from "../../../components/ui/input.tsx";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select.tsx";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -16,6 +23,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { updateUserSchema } from "../../../services/users/validators";
 import { useUpdateUser } from "../../../services/users/hooks/use-update-user.ts";
 import { UserDto } from "../../../services/users/dtos";
+import { useFindProfitCenters } from "../../../services/users/hooks/use-find-profit-centers.ts";
 
 export function FormEditUser({
   setOpen,
@@ -27,11 +35,13 @@ export function FormEditUser({
   user: UserDto;
 }) {
   const [isLoading, setIsLoading] = useState(false);
+  const { data: profitCenters } = useFindProfitCenters();
   const form = useForm<z.infer<typeof updateUserSchema>>({
     resolver: zodResolver(updateUserSchema),
     defaultValues: {
       username: user.username,
       display_name: user.display_name,
+      profit_center_id: user.profit_center_id?.toString() || "",
       password: "",
       password_confirmation: "",
     },
@@ -41,7 +51,11 @@ export function FormEditUser({
   const onSubmit = async (data: z.infer<typeof updateUserSchema>) => {
     setIsLoading(true);
     try {
-      await updateUser.mutateAsync(data);
+      const submitData = {
+        ...data,
+        profit_center_id: data.profit_center_id ? Number(data.profit_center_id) : undefined,
+      };
+      await updateUser.mutateAsync(submitData);
       setOpen(false);
     } finally {
       setIsLoading(false);
@@ -51,6 +65,36 @@ export function FormEditUser({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="profit_center_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                Profit Centers
+              </FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value}
+                disabled={isLoading}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full px-4 py-2 border-gray-300 rounded-md focus:ring-orange-500">
+                    <SelectValue placeholder="Select a Profit Center" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {profitCenters?.map((item) => (
+                    <SelectItem key={item.id} value={item.id.toString()}>
+                      {item.profit_center}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="username"

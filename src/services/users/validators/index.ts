@@ -18,6 +18,7 @@ export const updateUserSchema = z
   .object({
     username: z.string().nonempty(),
     display_name: z.string().nonempty(),
+    profit_center_id: z.string().optional(),
     password: z.string().nonempty().min(3).max(255),
     password_confirmation: z.string().nonempty().min(3).max(255),
   })

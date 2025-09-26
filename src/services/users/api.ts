@@ -81,7 +81,12 @@ export class UserApiService {
       password_confirmation: dto.password_confirmation,
     };
 
+    if (dto.profit_center_id !== undefined) {
+      updateData.profit_center_id = dto.profit_center_id;
+    }
+
     const response = await API.USERS.UPDATE(id, updateData);
+    console.log("Update Users 2", response);
     return response;
   }
 

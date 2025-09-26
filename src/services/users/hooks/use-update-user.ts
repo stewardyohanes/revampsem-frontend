@@ -60,12 +60,13 @@ export const useUpdateUser = (id: number) => {
 
       return userEntity;
     },
-    onSuccess: async (updatedUser) => {
+    onSuccess: async () => {
       toast({
         title: "User updated",
         description: "User has been updated successfully",
       });
 
+      // Invalidate and refetch users queries
       await queryClient.invalidateQueries({
         queryKey: queryKeyFactory.all(),
       });
@@ -74,25 +75,16 @@ export const useUpdateUser = (id: number) => {
         queryKey: queryKeyFactory.pagination(),
       });
 
-      await queryClient.refetchQueries({
-        queryKey: queryKeyFactory.all(),
+      // Also invalidate profit centers queries to refresh the mapping
+      const profitCenterQueryKey = new QueryKeyFactory("profit-centers");
+      await queryClient.invalidateQueries({
+        queryKey: profitCenterQueryKey.pagination(),
       });
 
+      // Force refetch to ensure immediate update
       await queryClient.refetchQueries({
         queryKey: queryKeyFactory.pagination(),
       });
-
-      queryClient.setQueryData(
-        queryKeyFactory.pagination(),
-        (oldData: UserEntity[] | undefined) => {
-          if (oldData && Array.isArray(oldData)) {
-            return oldData.map((user: UserEntity) =>
-              user.id === updatedUser.id ? updatedUser : user
-            );
-          }
-          return oldData;
-        }
-      );
     },
     onError: (error) => {
       toast({
