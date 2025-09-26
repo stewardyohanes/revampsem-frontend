@@ -17,7 +17,6 @@ export const useCreateUser = () => {
       if (!user) {
         throw new Error("User creation failed");
       }
-      // Convert UserDto to UserEntity
       const userEntity: UserEntity = {
         id: user.id,
         username: user.username,
@@ -37,24 +36,24 @@ export const useCreateUser = () => {
         title: "User created",
         description: "User has been created successfully",
       });
-      
+
       // Invalidate and refetch all users queries using proper query key factory
       await queryClient.invalidateQueries({
         queryKey: queryKeyFactory.all(),
         exact: false,
       });
-      
+
       await queryClient.refetchQueries({
         queryKey: queryKeyFactory.all(),
         exact: false,
       });
-      
+
       // Also invalidate pagination queries specifically
       await queryClient.invalidateQueries({
         queryKey: queryKeyFactory.pagination(),
         exact: false,
       });
-      
+
       await queryClient.refetchQueries({
         queryKey: queryKeyFactory.pagination(),
         exact: false,

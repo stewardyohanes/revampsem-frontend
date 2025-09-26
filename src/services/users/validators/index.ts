@@ -7,6 +7,7 @@ export const createUserSchema = z
     profit_center_id: z.string().nonempty(),
     password: z.string().nonempty().min(3).max(255),
     password_confirmation: z.string().nonempty().min(3).max(255),
+    level: z.number().default(1),
   })
   .refine((data) => data.password === data.password_confirmation, {
     message: "Passwords do not match",

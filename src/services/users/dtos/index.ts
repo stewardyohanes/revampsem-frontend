@@ -17,6 +17,7 @@ export interface CreateUserDto {
   password: string;
   password_confirmation?: string;
   profit_center_id?: number;
+  level: number;
 }
 
 export interface UpdateUserDto {
@@ -29,7 +30,6 @@ export interface UpdateUserDto {
 
 export interface ProfitCenterDto {
   id: number;
-  name: string;
   profit_center: string;
   created_at: string;
   updated_at: string;

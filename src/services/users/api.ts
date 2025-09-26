@@ -23,7 +23,7 @@ export class UserApiService {
 
       return [];
     } catch (error) {
-      console.error("UserApiService - Error in getUsers:", error);
+      console.error(error);
       return [];
     }
   }
@@ -40,9 +40,11 @@ export class UserApiService {
       password: dto.password,
       password_confirmation: dto.password_confirmation,
       profit_center_id: dto.profit_center_id,
+      level: dto.level || 1,
     };
 
     const response = await API.USERS.CREATE(createData);
+    console.log("Create Users", response);
     return response.data;
   }
 
@@ -66,7 +68,22 @@ export class UserApiService {
   }
 
   async getProfitCenters(): Promise<ProfitCenterDto[]> {
-    const response = await API.USERS.GET_PROFIT_CENTERS();
-    return response.data || [];
+    try {
+      const response = await API.USERS.GET_PROFIT_CENTERS();
+      console.log("Profit Centers", response);
+
+      if (Array.isArray(response)) {
+        return response;
+      }
+
+      if (response && response.data && Array.isArray(response.data)) {
+        return response.data;
+      }
+
+      return [];
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
   }
 }
