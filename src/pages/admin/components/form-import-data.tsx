@@ -33,6 +33,7 @@ import {
   processExcelFile,
   createCleanedExcelFile,
 } from "../../../utils/excel-processor.ts";
+import API from "../../../networks/api.ts";
 
 export default function FormImportData() {
   const [isLoading, setIsLoading] = useState(false);
@@ -59,6 +60,52 @@ export default function FormImportData() {
 
   const { data: events } = useFindEvent();
 
+  const handleQRCodeGeneration = async (eventId: number) => {
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      toast({
+        title: "Processing QR Codes",
+        description: "Generating QR codes and sending emails...",
+      });
+
+      const result = await API.QRCODE.SEND_ALL({
+        event_id: eventId,
+        customMessage:
+          "Your QR code for event attendance. Please scan this code to check-in.",
+      });
+
+      if (result.success) {
+        toast({
+          title: "QR Codes Sent Successfully",
+          description: `QR codes sent to ${
+            result.data.emailSent
+          } participants. ${
+            result.data.failed > 0
+              ? `${result.data.failed} failed to send.`
+              : ""
+          }`,
+        });
+
+        if (result.data.errors.length > 0) {
+          console.warn("QR Code sending errors:", result.data.errors);
+        }
+      } else {
+        throw new Error(result.message || "Failed to send QR codes");
+      }
+    } catch (error) {
+      console.error("Error generating QR codes:", error);
+      toast({
+        title: "QR Code Generation Failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to generate and send QR codes",
+        variant: "destructive",
+      });
+    }
+  };
+
   const onSubmitAttendance = async (
     data: z.infer<typeof createAttendanceSchema>
   ) => {
@@ -82,7 +129,6 @@ export default function FormImportData() {
         return;
       }
 
-      // Preprocess Excel file untuk membersihkan spasi berlebih
       let processedFile = data.file;
 
       if (data.file.name.endsWith(".xlsx") || data.file.name.endsWith(".xls")) {
@@ -107,7 +153,6 @@ export default function FormImportData() {
             return;
           }
 
-          // Buat file Excel baru dengan data yang sudah dibersihkan
           const cleanedFileName = `cleaned_${data.file.name}`;
           processedFile = createCleanedExcelFile(
             processingResult.data,
@@ -126,11 +171,11 @@ export default function FormImportData() {
               "Could not preprocess Excel file, uploading original file",
             variant: "destructive",
           });
-          // Tetap lanjutkan dengan file asli jika preprocessing gagal
         }
       }
 
       const eventId = parseInt(data.event_id);
+      let finalEventId = eventId;
 
       if (eventId !== 0) {
         await eventApiService.insertAttendance(
@@ -138,7 +183,6 @@ export default function FormImportData() {
           processedFile
         );
 
-        // Trigger real-time data update
         await triggerDataUpdate({
           eventId: eventId.toString(),
           type: "all",
@@ -148,6 +192,8 @@ export default function FormImportData() {
           title: "Success",
           description: "Attendance successfully uploaded to existing event",
         });
+
+        await handleQRCodeGeneration(eventId);
 
         formAttendance.reset();
         form.reset();
@@ -175,23 +221,29 @@ export default function FormImportData() {
         });
 
         if (newEvent && newEvent.id) {
+          finalEventId = newEvent.id;
+
+          // Insert attendance data
           await eventApiService.insertAttendance(
-            newEvent.id.toString(),
+            finalEventId.toString(),
             processedFile
           );
+
+          // Update data after attendance insertion
+          await triggerDataUpdate({
+            eventId: finalEventId.toString(),
+            type: "all",
+          });
+
+          toast({
+            title: "Success",
+            description:
+              "New event successfully created and attendance successfully uploaded",
+          });
+
+          // Generate and send QR codes after attendance is fully inserted
+          await handleQRCodeGeneration(finalEventId);
         }
-
-        // Trigger real-time data update for new event
-        await triggerDataUpdate({
-          eventId: newEvent?.id?.toString(),
-          type: "all",
-        });
-
-        toast({
-          title: "Success",
-          description:
-            "New event successfully created and attendance successfully uploaded",
-        });
 
         formAttendance.reset();
         form.reset();

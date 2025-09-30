@@ -4,6 +4,7 @@ import AdminPage from "./pages/admin";
 import { RootLayout } from "./components/layouts/root-layout.tsx";
 import LoginPage from "./pages/auth/login";
 import SuperAdminPage from "./pages/superadmin";
+import QRCheckInPage from "./pages/qr-checkin";
 import { useIsAuth } from "./services/auth/hooks/use-is-auth.ts";
 import { Loader2 } from "lucide-react";
 
@@ -27,6 +28,8 @@ function App() {
       <Route element={<PublicRoute />}>
         <Route path="/auth/login" element={<LoginPage />} />
       </Route>
+      {/* Public QR Check-in Route - accessible without authentication */}
+      <Route path="/qr-checkin/:token" element={<QRCheckInPage />} />
       <Route element={<PrivateRoute />}>
         <Route path="/" element={<RootLayout />}>
           {isAuth?.user?.level === 0 ? (

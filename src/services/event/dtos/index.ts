@@ -82,7 +82,6 @@ export type CreateEventDTO = CreateEventDto;
 export type EventDetailDTO = {
   name: string;
   email: string;
-  phone: string;
   created_by?: number;
   modified_by?: number;
   event_id?: number;

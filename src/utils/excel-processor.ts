@@ -90,7 +90,17 @@ const EXPECTED_HEADERS = {
   invoice: ["invoice", "inv", "no_invoice"],
   nama: ["nama", "name", "full_name", "fullname", "participant_name"],
   email: ["email", "e-mail", "mail", "email_address"],
-  telp: ["telp", "tlp", "phone", "no_telp", "no_hp", "telephone", "mobile"],
+  no_telp: [
+    "no_telp",
+    "phone number",
+    "phone_number",
+    "telp",
+    "tlp",
+    "phone",
+    "no_hp",
+    "telephone",
+    "mobile",
+  ],
   attendance: ["attendance", "status", "kehadiran", "hadir"],
 };
 
@@ -171,7 +181,7 @@ export const processExcelFile = async (
             Object.entries(headerMapping).forEach(([standardKey, colIndex]) => {
               const cellValue = row[colIndex];
 
-              if (standardKey === "telp") {
+              if (standardKey === "no_telp") {
                 rowData[standardKey] = normalizePhoneNumber(cellValue);
               } else if (standardKey === "nama") {
                 if (typeof cellValue === "string") {
@@ -186,7 +196,7 @@ export const processExcelFile = async (
               } else if (typeof cellValue === "string") {
                 rowData[standardKey] = cleanString(cellValue);
               } else if (typeof cellValue === "number") {
-                if (standardKey === "telp") {
+                if (standardKey === "no_telp") {
                   rowData[standardKey] = normalizePhoneNumber(cellValue);
                 } else {
                   rowData[standardKey] = cellValue;
@@ -195,7 +205,7 @@ export const processExcelFile = async (
                 rowData[standardKey] =
                   cellValue === null || cellValue === undefined
                     ? null
-                    : standardKey === "telp"
+                    : standardKey === "no_telp"
                     ? normalizePhoneNumber(cellValue)
                     : cleanString(String(cellValue));
               }
@@ -251,7 +261,7 @@ export const createCleanedExcelFile = (
       invoice: row.invoice || "",
       nama: row.nama || "",
       email: row.email || "",
-      no_telp: row.telp || "",
+      no_telp: row.no_telp || "",
       attendance: row.attendance || "",
     };
   });

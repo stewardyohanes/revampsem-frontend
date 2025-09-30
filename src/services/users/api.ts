@@ -24,7 +24,7 @@ export class UserApiService {
 
       return [];
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching users:", error);
       return [];
     }
   }
@@ -66,7 +66,7 @@ export class UserApiService {
 
       return undefined;
     } catch (error) {
-      console.error(error);
+      console.error("Error creating user:", error);
       throw error;
     }
   }
@@ -108,7 +108,7 @@ export class UserApiService {
 
       return [];
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching profit centers:", error);
       return [];
     }
   }
@@ -127,7 +127,7 @@ export class UserApiService {
 
       return [];
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching logs:", error);
       return [];
     }
   }

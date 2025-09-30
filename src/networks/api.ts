@@ -72,12 +72,16 @@ axios.defaults.headers.common["Content-Type"] =
 axios.interceptors.request.use(
   (config) => {
     const token = getAuthToken();
+    console.log("Request interceptor - Token:", token ? "Present" : "Not found");
+    console.log("Request interceptor - URL:", config.url);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log("Request interceptor - Authorization header set");
     }
     return config;
   },
   (error) => {
+    console.error("Request interceptor error:", error);
     return Promise.reject(error);
   }
 );
@@ -85,7 +89,13 @@ axios.interceptors.request.use(
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.error("Response interceptor error:", error);
+    console.error("Error response:", error.response);
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
+    
     if (error.response?.status === 401) {
+      console.log("401 Unauthorized - Clearing auth data and redirecting to login");
       clearAuthData();
       window.location.href = "/auth/login";
     }
@@ -545,6 +555,7 @@ const API = {
         const response = await axios.post(
           `${CONFIG.ENDPOINTS.QRCODE.REGENERATE}/${presentId}`
         );
+        console.log("Regenerate QR Code Response:", response.data);
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -561,6 +572,7 @@ const API = {
         const response = await axios.get(
           `${CONFIG.ENDPOINTS.QRCODE.PRESENT}/${presentId}`
         );
+        console.log("Get QR Code by Present ID Response:", response.data);
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -575,6 +587,7 @@ const API = {
         const response = await axios.get(
           `${CONFIG.ENDPOINTS.QRCODE.VALIDATE}/${token}`
         );
+        console.log("Validate QR Code Response:", response.data);
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -592,6 +605,7 @@ const API = {
           CONFIG.ENDPOINTS.QRCODE.CHECKIN,
           data
         );
+        console.log("Check-in QR Code Response:", response.data);
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -606,12 +620,13 @@ const API = {
     ): Promise<SendQRCodeEmailResponseDto> => {
       try {
         const response = await axios.post(
-          `${CONFIG.ENDPOINTS.QRCODE.SEND_EMAIL}/${data.presentId}`,
+          `${CONFIG.ENDPOINTS.QRCODE.SEND_EMAIL}/${data.present_id}`,
           {
             customMessage: data.customMessage,
             recipientEmail: data.recipientEmail,
           }
         );
+        console.log("Send QR Code Email Response:", response.data);
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -626,11 +641,12 @@ const API = {
     ): Promise<SendQRCodeToAllResponseDto> => {
       try {
         const response = await axios.post(
-          `${CONFIG.ENDPOINTS.QRCODE.SEND_ALL}/${data.eventId}`,
+          `${CONFIG.ENDPOINTS.QRCODE.SEND_ALL}/${data.event_id}`,
           {
             customMessage: data.customMessage,
           }
         );
+        console.log("Send QR Code to All Response:", response.data);
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error)) {

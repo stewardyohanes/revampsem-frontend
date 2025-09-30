@@ -158,7 +158,7 @@ export interface QRCodeByPresentResponseDto {
 }
 
 export interface RegenerateQRCodeDto {
-  presentId: number;
+  present_id: number;
 }
 
 export interface RegenerateQRCodeResponseDto {
@@ -172,7 +172,7 @@ export interface RegenerateQRCodeResponseDto {
 }
 
 export interface SendQRCodeEmailDto {
-  presentId: number;
+  present_id: number;
   customMessage?: string;
   recipientEmail?: string;
 }
@@ -181,14 +181,14 @@ export interface SendQRCodeEmailResponseDto {
   success: boolean;
   message: string;
   data?: {
-    presentId: number;
+    present_id: number;
     customMessage: string | null;
     recipientEmail: string | null;
   };
 }
 
 export interface SendQRCodeToAllDto {
-  eventId: number;
+  event_id: number;
   customMessage?: string;
 }
 
