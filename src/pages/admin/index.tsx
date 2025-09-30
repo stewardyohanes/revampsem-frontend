@@ -420,6 +420,69 @@ export default function AdminPage() {
     });
   };
 
+  const handleDownloadTemplate = () => {
+    let templateData;
+    let filename;
+
+    if (!selectedEvent || attendeesData.length === 0) {
+      templateData = [
+        {
+          no: "",
+          invoice: "",
+          name: "",
+          email: "",
+          no_telp: "",
+        },
+      ];
+      filename = `Template Seminar ${new Date().getFullYear()}.xlsx`;
+    } else {
+      templateData = attendeesData.map((item, index) => ({
+        no: index + 1,
+        invoice: item.invoice || "",
+        name: item.name,
+        email: item.email || "",
+        no_telp: item.no_telp || "",
+      }));
+      filename = `Template ${
+        selectedEvent.event || "Seminar"
+      } ${new Date().getFullYear()}.xlsx`;
+    }
+
+    const ExcelExportComponent = (
+      <ExcelExportXLSX
+        data={templateData}
+        filename={filename}
+        text="Download Template"
+        customHeaders={{
+          no: "No",
+          invoice: "Invoice",
+          name: "Name",
+          email: "Email",
+          no_telp: "Phone Number",
+        }}
+      />
+    );
+
+    const tempDiv = document.createElement("div");
+    document.body.appendChild(tempDiv);
+
+    import("react-dom/client").then(({ createRoot }) => {
+      const root = createRoot(tempDiv);
+      root.render(ExcelExportComponent);
+
+      setTimeout(() => {
+        const button = tempDiv.querySelector("button");
+        if (button) {
+          button.click();
+        }
+        setTimeout(() => {
+          root.unmount();
+          document.body.removeChild(tempDiv);
+        }, 100);
+      }, 100);
+    });
+  };
+
   const handleSyncDatabase = async () => {
     try {
       toast({
@@ -941,24 +1004,14 @@ export default function AdminPage() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-wrap gap-3">
-          <ExcelExportXLSX
-            data={attendeesData.map((item, index) => ({
-              no: index + 1,
-              invoice: item.invoice || "",
-              name: item.name,
-              email: item.email || "",
-              no_telp: item.no_telp || "",
-            }))}
-            filename={`Template Seminar ${new Date().getFullYear()}.xlsx`}
-            text={"Download Template"}
-            customHeaders={{
-              no: "No",
-              invoice: "Invoice",
-              name: "Name",
-              email: "Email",
-              no_telp: "Phone Number",
-            }}
-          />
+          <Button
+            variant="outline"
+            onClick={handleDownloadTemplate}
+            className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Download Template
+          </Button>
           <ModalForm
             open={openImportModal}
             setOpen={setOpenImportModal}
