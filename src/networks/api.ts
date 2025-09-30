@@ -49,6 +49,21 @@ import {
   PaginatedResponseDto,
 } from "../types/dto";
 
+import {
+  QRCodeDto,
+  QRCodeCheckInDto,
+  QRCodeValidateResponseDto,
+  QRCodeCheckInResponseDto,
+  QRCodeByPresentResponseDto,
+  RegenerateQRCodeDto,
+  RegenerateQRCodeResponseDto,
+  SendQRCodeEmailDto,
+  SendQRCodeEmailResponseDto,
+  SendQRCodeToAllDto,
+  SendQRCodeToAllResponseDto,
+  QRCodeErrorResponseDto,
+} from "@/types/dto";
+
 axios.defaults.baseURL = `${CONFIG.BASE_URL}${CONFIG.API_VERSION}`;
 axios.defaults.timeout = CONFIG.TIMEOUT;
 axios.defaults.headers.common["Content-Type"] =
@@ -521,6 +536,110 @@ const API = {
       }
     },
   },
+
+  QRCODE: {
+    REGENERATE: async (
+      presentId: number
+    ): Promise<RegenerateQRCodeResponseDto> => {
+      try {
+        const response = await axios.post(
+          `${CONFIG.ENDPOINTS.QRCODE.REGENERATE}/${presentId}`
+        );
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          throw handleApiError(error);
+        }
+        throw error;
+      }
+    },
+
+    GET_BY_PRESENT_ID: async (
+      presentId: number
+    ): Promise<QRCodeByPresentResponseDto> => {
+      try {
+        const response = await axios.get(
+          `${CONFIG.ENDPOINTS.QRCODE.PRESENT}/${presentId}`
+        );
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          throw handleApiError(error);
+        }
+        throw error;
+      }
+    },
+
+    VALIDATE: async (token: string): Promise<QRCodeValidateResponseDto> => {
+      try {
+        const response = await axios.get(
+          `${CONFIG.ENDPOINTS.QRCODE.VALIDATE}/${token}`
+        );
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          throw handleApiError(error);
+        }
+        throw error;
+      }
+    },
+
+    CHECKIN: async (
+      data: QRCodeCheckInDto
+    ): Promise<QRCodeCheckInResponseDto> => {
+      try {
+        const response = await axios.post(
+          CONFIG.ENDPOINTS.QRCODE.CHECKIN,
+          data
+        );
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          throw handleApiError(error);
+        }
+        throw error;
+      }
+    },
+
+    SEND_EMAIL: async (
+      data: SendQRCodeEmailDto
+    ): Promise<SendQRCodeEmailResponseDto> => {
+      try {
+        const response = await axios.post(
+          `${CONFIG.ENDPOINTS.QRCODE.SEND_EMAIL}/${data.presentId}`,
+          {
+            customMessage: data.customMessage,
+            recipientEmail: data.recipientEmail,
+          }
+        );
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          throw handleApiError(error);
+        }
+        throw error;
+      }
+    },
+
+    SEND_ALL: async (
+      data: SendQRCodeToAllDto
+    ): Promise<SendQRCodeToAllResponseDto> => {
+      try {
+        const response = await axios.post(
+          `${CONFIG.ENDPOINTS.QRCODE.SEND_ALL}/${data.eventId}`,
+          {
+            customMessage: data.customMessage,
+          }
+        );
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          throw handleApiError(error);
+        }
+        throw error;
+      }
+    },
+  },
 } as const;
 
 // Export the API object as default
@@ -555,4 +674,16 @@ export type {
   SyncDataDto,
   ApiResponseDto,
   PaginatedResponseDto,
+  QRCodeDto,
+  QRCodeCheckInDto,
+  QRCodeValidateResponseDto,
+  QRCodeCheckInResponseDto,
+  QRCodeByPresentResponseDto,
+  RegenerateQRCodeDto,
+  RegenerateQRCodeResponseDto,
+  SendQRCodeEmailDto,
+  SendQRCodeEmailResponseDto,
+  SendQRCodeToAllDto,
+  SendQRCodeToAllResponseDto,
+  QRCodeErrorResponseDto,
 };

@@ -1,4 +1,5 @@
-// ===== Sync DTOs =====
+import { EventDto, PresentDto } from "@/networks/api";
+
 export interface SyncDto {
   file: File;
 }
@@ -62,7 +63,6 @@ export interface SyncDataDto {
   sync_duration?: number;
 }
 
-// ===== Common DTOs =====
 export interface ApiResponseDto<T = unknown> {
   success: boolean;
   message: string;
@@ -84,7 +84,6 @@ export interface PaginatedResponseDto<T = unknown> extends ApiResponseDto<T> {
   pagination?: PaginationDto;
 }
 
-// ===== Error DTOs =====
 export interface ErrorDto {
   code: string;
   message: string;
@@ -96,4 +95,116 @@ export interface ValidationErrorDto extends ErrorDto {
   field_errors: {
     [field: string]: string[];
   };
+}
+
+export interface QRCodeDto {
+  id: number;
+  token: string;
+  used_at: string | null;
+  expired_at: string;
+  status_email: boolean;
+  status_whatsapp: boolean;
+  created_at: string;
+  updated_at: string;
+  present_id: number;
+  Present?: PresentDto;
+}
+
+export interface QRCodeInfoDto {
+  token: string;
+  expires_at: string;
+  is_used: boolean;
+  used_at: string | null;
+}
+
+export interface QRCodeCheckInDto {
+  token: string;
+}
+
+export interface QRCodeCheckInResponseDto {
+  success: boolean;
+  message: string;
+  data: {
+    present: PresentDto;
+    event: EventDto;
+    checked_in_at: string;
+  };
+}
+
+export interface QRCodeValidateResponseDto {
+  success: boolean;
+  message: string;
+  data: {
+    token: string;
+    present: PresentDto;
+    event: EventDto;
+    expires_at: string;
+    is_used: boolean;
+    used_at: string | null;
+  };
+}
+
+export interface QRCodeByPresentResponseDto {
+  success: boolean;
+  message: string;
+  data: {
+    token: string;
+    expires_at: string;
+    is_used: boolean;
+    used_at: string | null;
+    present: PresentDto;
+    event: EventDto;
+  };
+}
+
+export interface RegenerateQRCodeDto {
+  presentId: number;
+}
+
+export interface RegenerateQRCodeResponseDto {
+  success: boolean;
+  message: string;
+  data: {
+    token: string;
+    expires_at: string;
+    present: PresentDto;
+  };
+}
+
+export interface SendQRCodeEmailDto {
+  presentId: number;
+  customMessage?: string;
+  recipientEmail?: string;
+}
+
+export interface SendQRCodeEmailResponseDto {
+  success: boolean;
+  message: string;
+  data?: {
+    presentId: number;
+    customMessage: string | null;
+    recipientEmail: string | null;
+  };
+}
+
+export interface SendQRCodeToAllDto {
+  eventId: number;
+  customMessage?: string;
+}
+
+export interface SendQRCodeToAllResponseDto {
+  success: boolean;
+  message: string;
+  data: {
+    totalPresents: number;
+    emailSent: number;
+    failed: number;
+    errors: string[];
+  };
+}
+
+export interface QRCodeErrorResponseDto {
+  success: false;
+  message: string;
+  error?: string;
 }

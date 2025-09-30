@@ -28,6 +28,14 @@ const CONFIG = {
       BY_USER: "/logs/user",
       SUMMARY: "/logs/summary",
     },
+    QRCODE: {
+      REGENERATE: "/qrcode/regenerate",
+      PRESENT: "/qrcode/present",
+      VALIDATE: "/qrcode/validate",
+      CHECKIN: "/qrcode/checkin",
+      SEND_EMAIL: "/qrcode/send/email",
+      SEND_ALL: "/qrcode/send/all",
+    },
   },
 
   // Request timeout

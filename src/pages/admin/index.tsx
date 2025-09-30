@@ -1004,11 +1004,7 @@ export default function AdminPage() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-wrap gap-3">
-          <Button
-            variant="outline"
-            onClick={handleDownloadTemplate}
-            className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
-          >
+          <Button variant="outline" onClick={handleDownloadTemplate}>
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Download Template
           </Button>
