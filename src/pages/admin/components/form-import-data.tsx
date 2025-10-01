@@ -76,24 +76,30 @@ export default function FormImportData() {
       });
 
       if (result.success) {
+        // Handle response dengan atau tanpa data property
+        const responseData = result.data || {};
+        const regenerated = responseData.regenerated || 0;
+        const emailSent = responseData.emailSent || 0;
+        const failed = responseData.failed || 0;
+        const errors = responseData.errors || [];
+
         toast({
           title: "QR Codes Regenerated and Sent Successfully",
-          description: `QR codes regenerated for ${
-            result.data.regenerated
-          } participants and sent to ${
-            result.data.emailSent
-          } participants. ${
-            result.data.failed > 0
-              ? `${result.data.failed} failed to process.`
-              : ""
-          }`,
+          description: result.data
+            ? `QR codes regenerated for ${regenerated} participants and sent to ${emailSent} participants.${
+                failed > 0 ? ` ${failed} failed to process.` : ""
+              }`
+            : result.message ||
+              "QR codes have been successfully regenerated and sent.",
         });
 
-        if (result.data.errors.length > 0) {
-          console.warn("QR Code regeneration and sending errors:", result.data.errors);
+        if (errors.length > 0) {
+          console.warn("QR Code regeneration and sending errors:", errors);
         }
       } else {
-        throw new Error(result.message || "Failed to regenerate and send QR codes");
+        throw new Error(
+          result.message || "Failed to regenerate and send QR codes"
+        );
       }
     } catch (error) {
       console.error("Error regenerating and sending QR codes:", error);
@@ -141,10 +147,6 @@ export default function FormImportData() {
           });
 
           const processingResult = await processExcelFile(data.file);
-
-          if (processingResult.errors.length > 0) {
-            console.warn("Excel processing warnings:", processingResult.errors);
-          }
 
           if (processingResult.data.length === 0) {
             toast({
