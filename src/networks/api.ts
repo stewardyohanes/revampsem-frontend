@@ -1,6 +1,6 @@
 import axios from "axios";
 import CONFIG from "../configs/config";
-import { handleApiError } from "../lib/error-handler";
+import { handleApiError, withQRCodeRetry } from "../lib/error-handler";
 import {
   setAuthToken,
   getAuthToken,
@@ -612,20 +612,22 @@ const API = {
     REGENERATE_AND_SEND_ALL: async (
       data: RegenerateAndSendAllQRCodeDto
     ): Promise<RegenerateAndSendAllQRCodeResponseDto> => {
-      try {
-        const response = await axios.post(
-          `${CONFIG.ENDPOINTS.QRCODE.REGENERATE_AND_SEND_ALL}/${data.event_id}`,
-          {
+      const endpoint = `${CONFIG.ENDPOINTS.QRCODE.REGENERATE_AND_SEND_ALL}/${data.event_id}`;
+
+      return withQRCodeRetry(async () => {
+        try {
+          const response = await axios.post(endpoint, {
             customMessage: data.customMessage,
+          });
+          
+          return response.data;
+        } catch (error) {
+          if (axios.isAxiosError(error)) {
+            throw handleApiError(error);
           }
-        );
-        return response.data;
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          throw handleApiError(error);
+          throw error;
         }
-        throw error;
-      }
+      });
     },
   },
 } as const;

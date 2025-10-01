@@ -379,24 +379,24 @@ export default function AdminPage() {
       nama: item.name,
       email: item.email || "",
       telp: item.no_telp || "",
-      attendance: item.status === 1 ? "Hadir" : "Tidak Hadir",
+      attendance: item.status === 1 ? "Present" : "Not Present",
     }));
 
     const ExcelExportComponent = (
       <ExcelExportXLSX
         data={exportData}
-        filename={`Data Peserta ${
+        filename={`Participant Data ${
           selectedEvent?.event || "Seminar"
         } ${new Date().getFullYear()}.xlsx`}
         text="Export Excel"
         customHeaders={{
-          no: "No",
-          invoice: "Invoice",
-          nama: "Nama",
-          email: "Email",
-          telp: "Tlp",
-          attendance: "Attendance",
-        }}
+            no: "No",
+            invoice: "Invoice",
+            nama: "Name",
+            email: "Email",
+            telp: "Phone",
+            attendance: "Attendance",
+          }}
       />
     );
 
@@ -1037,18 +1037,18 @@ export default function AdminPage() {
               nama: item.name,
               email: item.email || "",
               telp: item.no_telp || "",
-              attendance: item.status === 1 ? "Hadir" : "Tidak Hadir",
+              attendance: item.status === 1 ? "Present" : "Not Present",
             }))}
-            filename={`Data Peserta ${
+            filename={`Participant Data ${
               selectedEvent?.event || "Seminar"
             } ${new Date().getFullYear()}.csv`}
             text="Export CSV"
             customHeaders={{
               no: "No",
               invoice: "Invoice",
-              nama: "Nama",
+              nama: "Name",
               email: "Email",
-              telp: "Tlp",
+              telp: "Phone",
               attendance: "Attendance",
             }}
             disabled={!selectedEvent}

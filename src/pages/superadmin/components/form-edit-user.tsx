@@ -120,7 +120,7 @@ export function FormEditUser({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                New Password Confirmation
+                Konfirmasi Password Baru
               </FormLabel>
               <FormControl>
                 <Input
@@ -145,7 +145,7 @@ export function FormEditUser({
             {isLoading ? (
               <Loader2 className="animate-spin h-5 w-5" />
             ) : (
-              <span>Update</span>
+              <span>Perbarui</span>
             )}
           </Button>
         </div>

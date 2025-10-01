@@ -176,7 +176,7 @@ export default function SuperAdminPage() {
               className="w-20 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white"
               onClick={() => handleUpdateClick(user)}
             >
-              Update
+              Perbarui
             </Button>
             <Button
               size="sm"
@@ -184,7 +184,7 @@ export default function SuperAdminPage() {
               className="w-20 rounded-2xl"
               onClick={() => handleDeleteClick(user)}
             >
-              Delete
+              Hapus
             </Button>
           </div>
         );
@@ -287,11 +287,11 @@ export default function SuperAdminPage() {
                   <ModalForm
                     open={openCreate}
                     setOpen={setOpenCreate}
-                    title={"Create User"}
+                    title={"Buat Pengguna"}
                     triggerText={
                       <Button>
                         <PlusCircledIcon className="mr-2 h-4 w-4" />
-                        Add User
+                        Tambah Pengguna
                       </Button>
                     }
                   >
@@ -327,14 +327,14 @@ export default function SuperAdminPage() {
       <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-red-600">Confirm Delete</DialogTitle>
+            <DialogTitle className="text-red-600">Konfirmasi Hapus</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {selectedUser && (
               <div className="space-y-3">
                 <p className="text-sm text-gray-600">
-                  Are you sure you want to delete this user? This action cannot
-                  be undone.
+                  Apakah Anda yakin ingin menghapus pengguna ini? Tindakan ini tidak dapat
+                  dibatalkan.
                 </p>
                 <div className="bg-gray-50 p-3 rounded-lg space-y-2">
                   <div className="grid grid-cols-2 gap-4">
@@ -364,14 +364,14 @@ export default function SuperAdminPage() {
                 variant="outline"
                 className="flex-1"
               >
-                Cancel
+                Batal
               </Button>
               <Button
                 onClick={() => handleConfirmDelete()}
                 variant="destructive"
                 className="flex-1"
               >
-                Delete
+                Hapus
               </Button>
             </div>
           </div>
@@ -382,7 +382,7 @@ export default function SuperAdminPage() {
       <ModalForm
         open={openUpdate}
         setOpen={setOpenUpdate}
-        title={"Edit User"}
+        title={"Edit Pengguna"}
         triggerText={null}
       >
         {selectedUser && (

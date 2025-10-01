@@ -59,8 +59,8 @@ export const useAuthLogin = (): UseMutationResult<
       });
 
       toast({
-        title: "Login berhasil",
-        description: "Anda berhasil masuk ke sistem",
+        title: "Login Successful",
+        description: "You have successfully logged into the system",
       });
 
       // Wait for query invalidation to complete before allowing redirect
@@ -73,8 +73,8 @@ export const useAuthLogin = (): UseMutationResult<
           : error.message;
 
       toast({
-        title: "Login gagal",
-        description: message || "Terjadi kesalahan saat login",
+        title: "Login Failed",
+        description: message || "An error occurred during login",
         variant: "destructive",
       });
     },

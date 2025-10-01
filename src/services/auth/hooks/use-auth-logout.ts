@@ -29,8 +29,8 @@ export const useAuthLogout = () => {
     onSuccess: () => {
       // Show success message
       toast({
-        title: "Logout berhasil",
-        description: "Anda telah berhasil keluar dari sistem",
+        title: "Logout Successful",
+        description: "You have successfully logged out of the system",
       });
       
       // Redirect to login page with replace to prevent back navigation
@@ -47,8 +47,8 @@ export const useAuthLogout = () => {
       queryClient.clear();
       
       toast({
-        title: "Logout gagal",
-        description: error instanceof Error ? error.message : "Terjadi kesalahan saat logout",
+        title: "Logout Failed",
+        description: error instanceof Error ? error.message : "An error occurred during logout",
         variant: "destructive",
       });
       
