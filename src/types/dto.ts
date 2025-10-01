@@ -171,6 +171,38 @@ export interface RegenerateQRCodeResponseDto {
   };
 }
 
+export interface RegenerateAllQRCodeDto {
+  event_id: number;
+}
+
+export interface RegenerateAllQRCodeResponseDto {
+  success: boolean;
+  message: string;
+  data: {
+    totalPresents: number;
+    regenerated: number;
+    failed: number;
+    errors: string[];
+  };
+}
+
+export interface RegenerateAndSendAllQRCodeDto {
+  event_id: number;
+  customMessage?: string;
+}
+
+export interface RegenerateAndSendAllQRCodeResponseDto {
+  success: boolean;
+  message: string;
+  data: {
+    totalPresents: number;
+    regenerated: number;
+    emailSent: number;
+    failed: number;
+    errors: string[];
+  };
+}
+
 export interface SendQRCodeEmailDto {
   present_id: number;
   customMessage?: string;

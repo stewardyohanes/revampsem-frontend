@@ -66,10 +66,10 @@ export default function FormImportData() {
 
       toast({
         title: "Processing QR Codes",
-        description: "Generating QR codes and sending emails...",
+        description: "Regenerating QR codes and sending emails...",
       });
 
-      const result = await API.QRCODE.SEND_ALL({
+      const result = await API.QRCODE.REGENERATE_AND_SEND_ALL({
         event_id: eventId,
         customMessage:
           "Your QR code for event attendance. Please scan this code to check-in.",
@@ -77,30 +77,32 @@ export default function FormImportData() {
 
       if (result.success) {
         toast({
-          title: "QR Codes Sent Successfully",
-          description: `QR codes sent to ${
+          title: "QR Codes Regenerated and Sent Successfully",
+          description: `QR codes regenerated for ${
+            result.data.regenerated
+          } participants and sent to ${
             result.data.emailSent
           } participants. ${
             result.data.failed > 0
-              ? `${result.data.failed} failed to send.`
+              ? `${result.data.failed} failed to process.`
               : ""
           }`,
         });
 
         if (result.data.errors.length > 0) {
-          console.warn("QR Code sending errors:", result.data.errors);
+          console.warn("QR Code regeneration and sending errors:", result.data.errors);
         }
       } else {
-        throw new Error(result.message || "Failed to send QR codes");
+        throw new Error(result.message || "Failed to regenerate and send QR codes");
       }
     } catch (error) {
-      console.error("Error generating QR codes:", error);
+      console.error("Error regenerating and sending QR codes:", error);
       toast({
-        title: "QR Code Generation Failed",
+        title: "QR Code Regeneration Failed",
         description:
           error instanceof Error
             ? error.message
-            : "Failed to generate and send QR codes",
+            : "Failed to regenerate and send QR codes",
         variant: "destructive",
       });
     }
