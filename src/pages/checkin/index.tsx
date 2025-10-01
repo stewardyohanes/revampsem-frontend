@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -26,7 +26,8 @@ import { useIsAuth } from "../../services/auth/hooks/use-is-auth";
 import { getUserData } from "../../lib/token-manager";
 
 export default function QRCheckInPage() {
-  const { token } = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: authData } = useIsAuth();
@@ -94,7 +95,8 @@ export default function QRCheckInPage() {
 
         toast({
           title: "QR Code Valid",
-          description: "QR code successfully validated. Please proceed with check-in.",
+          description:
+            "QR code successfully validated. Please proceed with check-in.",
         });
       } else {
         throw new Error(result.message || "Invalid QR code");
@@ -224,7 +226,9 @@ export default function QRCheckInPage() {
             <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-            <CardTitle className="text-green-600">Check-in Successful!</CardTitle>
+            <CardTitle className="text-green-600">
+              Check-in Successful!
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-green-50 p-4 rounded-lg space-y-2">
@@ -259,8 +263,7 @@ export default function QRCheckInPage() {
             </div>
             <p className="text-center text-gray-600">
               Your status has changed from{" "}
-              <span className="font-semibold text-orange-600">Approve</span>{" "}
-              to{" "}
+              <span className="font-semibold text-orange-600">Approve</span> to{" "}
               <span className="font-semibold text-green-600">Approved</span>
             </p>
             <Button
@@ -334,7 +337,9 @@ export default function QRCheckInPage() {
                   <p className="font-semibold">{qrData.data.event.event}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-600">Time Remaining:</span>
+                  <span className="font-medium text-gray-600">
+                    Time Remaining:
+                  </span>
                   <p className="font-semibold text-orange-600">
                     {getTimeRemaining()}
                   </p>

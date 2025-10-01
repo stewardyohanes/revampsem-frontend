@@ -619,7 +619,7 @@ const API = {
           const response = await axios.post(endpoint, {
             customMessage: data.customMessage,
           });
-          
+
           return response.data;
         } catch (error) {
           if (axios.isAxiosError(error)) {
