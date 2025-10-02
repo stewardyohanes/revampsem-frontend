@@ -391,14 +391,17 @@ export default function FormImportData() {
                 Excel File
               </FormLabel>
               <FormControl>
-                <Input
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={(e) => field.onChange(e.target.files?.[0] || null)}
-                  value=""
-                  className="w-full px-4 py-2 border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
-                  disabled={isLoading}
-                />
+                <div className="relative">
+                  <Input
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={(e) =>
+                      field.onChange(e.target.files?.[0] || null)
+                    }
+                    className="w-full px-4 py-2 border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
+                    disabled={isLoading}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
