@@ -48,7 +48,7 @@ export interface CreatePresentDto {
   email?: string;
   no_telp?: string;
   status?: number;
-  profit_center_id: number;
+  profit_center_id?: number;
   event_id: number;
 }
 

@@ -55,8 +55,8 @@ const addParticipantSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   no_telp: z.string().optional(),
   status: z.number().default(0),
-  profit_center_id: z.number(),
-  event_id: z.number(),
+  profit_center_id: z.number().optional(),
+  event_id: z.number().optional(),
 });
 
 const updateParticipantSchema = z.object({
@@ -340,10 +340,12 @@ export default function AdminPage() {
   useEffect(() => {
     if (selectedEvent) {
       addParticipantForm.setValue("event_id", selectedEvent.id);
-      addParticipantForm.setValue(
-        "profit_center_id",
-        selectedEvent.profit_center_id || 1
-      );
+      if (selectedEvent.profit_center_id) {
+        addParticipantForm.setValue(
+          "profit_center_id",
+          selectedEvent.profit_center_id
+        );
+      }
     }
   }, [selectedEvent, addParticipantForm]);
 
@@ -390,13 +392,13 @@ export default function AdminPage() {
         } ${new Date().getFullYear()}.xlsx`}
         text="Export Excel"
         customHeaders={{
-            no: "No",
-            invoice: "Invoice",
-            nama: "Name",
-            email: "Email",
-            telp: "Phone",
-            attendance: "Attendance",
-          }}
+          no: "No",
+          invoice: "Invoice",
+          nama: "Name",
+          email: "Email",
+          telp: "Phone",
+          attendance: "Attendance",
+        }}
       />
     );
 
@@ -888,15 +890,36 @@ export default function AdminPage() {
     data: z.infer<typeof addParticipantSchema>
   ) => {
     try {
+      if (!data.name || data.name.trim() === "") {
+        toast({
+          title: "Validation Error",
+          description: "Name is required",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!selectedEvent) {
+        toast({
+          title: "Validation Error",
+          description: "Please select an event first",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const participantData = {
         ...data,
-        profit_center_id: data.profit_center_id || 1,
+        name: data.name.trim(),
+        event_id: selectedEvent.id,
+        ...(data.no_telp && { no_telp: data.no_telp }),
+        ...(selectedEvent.profit_center_id && {
+          profit_center_id: selectedEvent.profit_center_id,
+        }),
       };
 
-      const response = await API.PRESENTS.CREATE(
-        participantData,
-        parseInt(eventID)
-      );
+      const response = await API.PRESENTS.CREATE(participantData);
+      console.log("x", response);
 
       if (response.success) {
         addParticipantForm.reset();
