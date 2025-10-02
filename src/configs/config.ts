@@ -19,6 +19,7 @@ const CONFIG = {
     },
     PRESENTS: {
       BASE: "/presents",
+      WITH_EMAIL: "/presents/with-email",
     },
     SYNC: {
       SYNC_ALL: "/sync/all",

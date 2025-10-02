@@ -466,6 +466,22 @@ const API = {
         throw error;
       }
     },
+
+    WITH_EMAIL: async (
+      params?: PresentQueryParamsDto
+    ): Promise<PaginatedResponseDto<PresentDto[]>> => {
+      try {
+        const response = await axios.get(CONFIG.ENDPOINTS.PRESENTS.WITH_EMAIL, {
+          params,
+        });
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          throw handleApiError(error);
+        }
+        throw error;
+      }
+    },
   },
 
   SYNC: {
