@@ -49,6 +49,7 @@ import {
   QRCodeValidateResponseDto,
   QRCodeCheckInResponseDto,
   QRCodeByPresentResponseDto,
+  QRCodeImageResponseDto,
   RegenerateQRCodeDto,
   RegenerateQRCodeResponseDto,
   RegenerateAllQRCodeDto,
@@ -471,7 +472,10 @@ const API = {
       data: CreatePresentDto
     ): Promise<ApiResponseDto<PresentDto>> => {
       try {
-        const response = await axios.post(CONFIG.ENDPOINTS.PRESENTS.WITH_EMAIL, data);
+        const response = await axios.post(
+          CONFIG.ENDPOINTS.PRESENTS.WITH_EMAIL,
+          data
+        );
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -527,6 +531,22 @@ const API = {
       try {
         const response = await axios.get(
           `${CONFIG.ENDPOINTS.QRCODE.PRESENT}/${presentId}`
+        );
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          throw handleApiError(error);
+        }
+        throw error;
+      }
+    },
+
+    GET_IMAGE: async (
+      presentId: number
+    ): Promise<QRCodeImageResponseDto> => {
+      try {
+        const response = await axios.get(
+          `${CONFIG.ENDPOINTS.QRCODE.IMAGE}/${presentId}`
         );
         return response.data;
       } catch (error) {
@@ -680,6 +700,7 @@ export type {
   QRCodeValidateResponseDto,
   QRCodeCheckInResponseDto,
   QRCodeByPresentResponseDto,
+  QRCodeImageResponseDto,
   RegenerateQRCodeDto,
   RegenerateQRCodeResponseDto,
   RegenerateAllQRCodeDto,

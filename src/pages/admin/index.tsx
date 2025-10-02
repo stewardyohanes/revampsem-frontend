@@ -5,7 +5,16 @@ import {
   CardTitle,
 } from "../../components/ui/card.tsx";
 import { Button } from "../../components/ui/button.tsx";
-import { Database, FileSpreadsheet, Plus, Upload } from "lucide-react";
+import {
+  Database,
+  FileSpreadsheet,
+  Plus,
+  Upload,
+  Loader2,
+  Eye,
+  RefreshCw,
+  Mail,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -104,11 +113,17 @@ export default function AdminPage() {
   const [openApprovedDialog, setOpenApprovedDialog] = useState(false);
   const [openNotAttendDialog, setOpenNotAttendDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [openQRCodeModal, setOpenQRCodeModal] = useState(false);
   const [isAddingParticipant, setIsAddingParticipant] = useState(false);
   const [selectedParticipant, setSelectedParticipant] =
     useState<PresentDto | null>(null);
   const [selectedParticipantForApproval, setSelectedParticipantForApproval] =
     useState<PresentDto | null>(null);
+  const [qrCodeImage, setQRCodeImage] = useState<string>("");
+  const [isLoadingQRCode, setIsLoadingQRCode] = useState(false);
+  const [isRegeneratingQRCode, setIsRegeneratingQRCode] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [currentPresentId, setCurrentPresentId] = useState<number | null>(null);
   const [eventID, setEventID] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<EventDto | null>(null);
   const [attendeesData, setAttendeesData] = useState<PresentDto[]>([]);
@@ -230,6 +245,27 @@ export default function AdminPage() {
       cell: ({ row }) => {
         return (
           <div className="text-center">{row.getValue("no_telp") || "-"}</div>
+        );
+      },
+    },
+    {
+      id: "qrcode",
+      header: () => {
+        return <div className="text-center">QR Code</div>;
+      },
+      cell: ({ row }) => {
+        const present = row.original;
+        return (
+          <div className="flex justify-center">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0"
+              onClick={() => handleViewQRCode(present.id)}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          </div>
         );
       },
     },
@@ -537,6 +573,132 @@ export default function AdminPage() {
   const handleDeleteClick = (present: PresentDto) => {
     setSelectedParticipant(present);
     setOpenDeleteDialog(true);
+  };
+
+  const handleViewQRCode = async (presentId: number) => {
+    try {
+      setIsLoadingQRCode(true);
+      setCurrentPresentId(presentId);
+      setOpenQRCodeModal(true);
+
+      const response = await API.QRCODE.GET_IMAGE(presentId);
+
+      if (response.success && response.data?.qr_image) {
+        setQRCodeImage(response.data.qr_image);
+      } else {
+        throw new Error(response.message || "Failed to load QR Code image");
+      }
+    } catch (error) {
+      console.error("Error loading QR Code:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to load QR Code image",
+        variant: "destructive",
+      });
+      setOpenQRCodeModal(false);
+    } finally {
+      setIsLoadingQRCode(false);
+    }
+  };
+
+  const handleRegenerateQRCode = async () => {
+    if (!currentPresentId) return;
+
+    try {
+      setIsRegeneratingQRCode(true);
+
+      // First regenerate the QR Code
+      const regenerateResponse = await API.QRCODE.REGENERATE(currentPresentId);
+
+      if (regenerateResponse.success && regenerateResponse.data) {
+        // Then get the new QR Code image
+        const imageResponse = await API.QRCODE.GET_IMAGE(currentPresentId);
+
+        if (imageResponse.success && imageResponse.data) {
+          setQRCodeImage(imageResponse.data.qr_image);
+          toast({
+            title: "QR Code Regenerated",
+            description: "QR Code has been successfully regenerated",
+          });
+        } else {
+          throw new Error(
+            imageResponse.message || "Failed to get new QR Code image"
+          );
+        }
+      } else {
+        throw new Error(
+          regenerateResponse.message || "Failed to regenerate QR Code"
+        );
+      }
+    } catch (error) {
+      console.error("Error regenerating QR Code:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to regenerate QR Code",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRegeneratingQRCode(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!currentPresentId) return;
+
+    try {
+      setIsSendingEmail(true);
+
+      // Check if backend is reachable first
+      const response = await API.QRCODE.SEND_EMAIL({
+        present_id: currentPresentId,
+      });
+
+      if (response.success) {
+        toast({
+          title: "Email Sent",
+          description: "QR Code has been successfully sent via email",
+        });
+      } else {
+        throw new Error(response.message || "Failed to send email");
+      }
+    } catch (error: unknown) {
+      console.error("Error sending email:", error);
+
+      let errorMessage = "Failed to send QR Code via email";
+
+      // Handle specific network errors with proper type checking
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        (error.code === "ERR_NETWORK" ||
+          error.code === "ERR_CONNECTION_REFUSED")
+      ) {
+        errorMessage =
+          "Network connection failed. Please ensure the backend server is running at http://localhost:3030";
+      } else if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        typeof error.message === "string"
+      ) {
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   const handleConfirmApprove = async () => {
@@ -1256,7 +1418,11 @@ export default function AdminPage() {
                       className="bg-black hover:bg-gray-800 text-white"
                       disabled={isAddingParticipant}
                     >
-                      {isAddingParticipant ? "Adding..." : "Add"}
+                      {isAddingParticipant ? (
+                        <Loader2 className="animate-spin h-5 w-5" />
+                      ) : (
+                        <span>Add</span>
+                      )}
                     </Button>
                   </div>
                 </form>
@@ -1616,6 +1782,64 @@ export default function AdminPage() {
                 >
                   Delete
                 </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* QR Code Modal */}
+        <Dialog open={openQRCodeModal} onOpenChange={setOpenQRCodeModal}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>QR Code</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex justify-center min-h-[400px] items-center">
+                {isLoadingQRCode ? (
+                  <div className="flex flex-col items-center space-y-3">
+                    <Loader2 className="h-12 w-12 animate-spin text-orange-600" />
+                    <p className="text-sm text-gray-600">Loading QR Code...</p>
+                  </div>
+                ) : qrCodeImage ? (
+                  <div className="flex flex-col items-center space-y-4">
+                    <img
+                      src={qrCodeImage}
+                      alt="QR Code"
+                      className="w-full max-w-lg h-auto border rounded-lg shadow-lg"
+                    />
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={handleRegenerateQRCode}
+                        disabled={isRegeneratingQRCode || isSendingEmail}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        {isRegeneratingQRCode ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4" />
+                        )}
+                        {isRegeneratingQRCode
+                          ? "Regenerating..."
+                          : "Regenerate"}
+                      </Button>
+                      <Button
+                        onClick={handleSendEmail}
+                        disabled={isSendingEmail || isRegeneratingQRCode}
+                        className="flex items-center gap-2"
+                      >
+                        {isSendingEmail ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Mail className="h-4 w-4" />
+                        )}
+                        {isSendingEmail ? "Sending..." : "Send Email"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600">No QR Code available</p>
+                )}
               </div>
             </div>
           </DialogContent>

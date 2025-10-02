@@ -235,6 +235,21 @@ export interface SendQRCodeToAllResponseDto {
   };
 }
 
+export interface QRCodeImageResponseDto {
+  success: boolean;
+  message: string;
+  data: {
+    qr_image: string;
+    token: string;
+    qr_url: string;
+    expires_at: string;
+    is_used: boolean;
+    used_at: string | null;
+    present: PresentDto;
+    event: EventDto;
+  };
+}
+
 export interface QRCodeErrorResponseDto {
   success: false;
   message: string;

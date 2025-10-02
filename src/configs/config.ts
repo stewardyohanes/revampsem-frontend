@@ -38,6 +38,7 @@ const CONFIG = {
       CHECKIN: "/qrcode/checkin",
       SEND_EMAIL: "/qrcode/send/email",
       SEND_ALL: "/qrcode/send/all",
+      IMAGE: "/qrcode/image",
     },
   },
 
