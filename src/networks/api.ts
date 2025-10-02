@@ -468,12 +468,10 @@ const API = {
     },
 
     WITH_EMAIL: async (
-      params?: PresentQueryParamsDto
-    ): Promise<PaginatedResponseDto<PresentDto[]>> => {
+      data: CreatePresentDto
+    ): Promise<ApiResponseDto<PresentDto>> => {
       try {
-        const response = await axios.get(CONFIG.ENDPOINTS.PRESENTS.WITH_EMAIL, {
-          params,
-        });
+        const response = await axios.post(CONFIG.ENDPOINTS.PRESENTS.WITH_EMAIL, data);
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error)) {

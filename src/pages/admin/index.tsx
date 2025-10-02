@@ -104,6 +104,7 @@ export default function AdminPage() {
   const [openApprovedDialog, setOpenApprovedDialog] = useState(false);
   const [openNotAttendDialog, setOpenNotAttendDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [isAddingParticipant, setIsAddingParticipant] = useState(false);
   const [selectedParticipant, setSelectedParticipant] =
     useState<PresentDto | null>(null);
   const [selectedParticipantForApproval, setSelectedParticipantForApproval] =
@@ -890,6 +891,14 @@ export default function AdminPage() {
     data: z.infer<typeof addParticipantSchema>
   ) => {
     try {
+      setIsAddingParticipant(true);
+
+      // Show initial loading toast
+      toast({
+        title: "Creating Participant",
+        description: "Adding participant data...",
+      });
+
       if (!data.name || data.name.trim() === "") {
         toast({
           title: "Validation Error",
@@ -911,24 +920,62 @@ export default function AdminPage() {
       const participantData = {
         ...data,
         name: data.name.trim(),
-        event_id: selectedEvent.id,
+        event_id: Number(selectedEvent.id),
+        status: 0,
         ...(data.no_telp && { no_telp: data.no_telp }),
         ...(selectedEvent.profit_center_id && {
-          profit_center_id: selectedEvent.profit_center_id,
+          profit_center_id: Number(selectedEvent.profit_center_id),
         }),
       };
 
-      const response = await API.PRESENTS.CREATE(participantData);
-      console.log("x", response);
+      // Update toast for QR generation
+      toast({
+        title: "Processing",
+        description: "Generating QR code and sending email...",
+      });
+
+      const response = await API.PRESENTS.WITH_EMAIL(participantData);
 
       if (response.success) {
         addParticipantForm.reset();
         setOpenAddPesertaModal(false);
 
+        const responseData = response.data || {};
+        const regenerated =
+          (responseData as { regenerated?: number }).regenerated || 0;
+        const emailSent =
+          (responseData as { emailSent?: number }).emailSent || 0;
+        const failed = (responseData as { failed?: number }).failed || 0;
+        const errors = (responseData as { errors?: string[] }).errors || [];
+
+        // Success toast with detailed information
+        let successMessage = "Participant added successfully!";
+
+        if (responseData && Object.keys(responseData).length > 0) {
+          const details = [];
+          if (emailSent > 0) details.push(`✅ Email sent: ${emailSent}`);
+          if (regenerated > 0)
+            details.push(`🔄 QR regenerated: ${regenerated}`);
+          if (failed > 0) details.push(`❌ Failed processes: ${failed}`);
+
+          if (details.length > 0) {
+            successMessage += `\n${details.join("\n")}`;
+          }
+        }
+
         toast({
-          title: "Participant Created",
-          description: "Participant has been added successfully",
+          title: "Success",
+          description: successMessage,
         });
+
+        if (errors.length > 0) {
+          // Show additional toast for errors
+          toast({
+            title: "Warning",
+            description: `Some processes had issues: ${errors.join(", ")}`,
+            variant: "destructive",
+          });
+        }
 
         await triggerDataUpdate({
           eventId: eventID,
@@ -954,10 +1001,13 @@ export default function AdminPage() {
 
       if (errorMessage) {
         toast({
+          title: "Error",
           description: errorMessage,
           variant: "destructive",
         });
       }
+    } finally {
+      setIsAddingParticipant(false);
     }
   };
 
@@ -1204,8 +1254,9 @@ export default function AdminPage() {
                     <Button
                       type="submit"
                       className="bg-black hover:bg-gray-800 text-white"
+                      disabled={isAddingParticipant}
                     >
-                      Add
+                      {isAddingParticipant ? "Adding..." : "Add"}
                     </Button>
                   </div>
                 </form>
